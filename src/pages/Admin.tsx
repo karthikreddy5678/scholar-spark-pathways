@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -749,4 +750,31 @@ export default function Admin() {
                 </TabsContent>
                 
                 <TabsContent value="archived" className="mt-4">
-                  <DashboardCard title="
+                  <DashboardCard title="Archived Courses">
+                    <div className="py-8 text-center text-muted-foreground">
+                      <FileOutput className="h-10 w-10 mx-auto mb-4 opacity-50" />
+                      <p>No archived courses found</p>
+                    </div>
+                  </DashboardCard>
+                </TabsContent>
+                
+                <TabsContent value="upcoming" className="mt-4">
+                  <DashboardCard title="Upcoming Courses">
+                    <div className="py-8 text-center text-muted-foreground">
+                      <CalendarDays className="h-10 w-10 mx-auto mb-4 opacity-50" />
+                      <p>No upcoming courses scheduled</p>
+                      <Button variant="outline" size="sm" className="mt-4">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Schedule New Course
+                      </Button>
+                    </div>
+                  </DashboardCard>
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+}
