@@ -6,16 +6,24 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { GraduationCap, AtSign, Lock, Eye, EyeOff, User, Key } from "lucide-react";
+import { GraduationCap, AtSign, Lock, Eye, EyeOff, User, Key, UserCog, Building, ShieldCheck } from "lucide-react";
+import { DashboardCard } from "@/components/dashboard/DashboardCard";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
   const navigate = useNavigate();
   
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     // In a real application, this would authenticate the user
     navigate("/");
+  };
+
+  const handleAdminLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    // In a real application, this would authenticate the admin
+    navigate("/admin");
   };
 
   return (
@@ -30,17 +38,18 @@ export default function Login() {
         </div>
         
         <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">Login</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="login">Student</TabsTrigger>
+            <TabsTrigger value="admin">Admin</TabsTrigger>
             <TabsTrigger value="register">Register</TabsTrigger>
           </TabsList>
           
           <TabsContent value="login">
             <Card>
               <CardHeader>
-                <CardTitle>Welcome back</CardTitle>
+                <CardTitle>Student Login</CardTitle>
                 <CardDescription>
-                  Enter your credentials to access your account
+                  Enter your credentials to access your student account
                 </CardDescription>
               </CardHeader>
               <form onSubmit={handleLogin}>
@@ -103,6 +112,110 @@ export default function Login() {
                 <CardFooter>
                   <Button type="submit" className="w-full bg-edu-purple hover:bg-edu-purple-dark">
                     Sign In
+                  </Button>
+                </CardFooter>
+              </form>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="admin">
+            <Card className="border-edu-purple/30">
+              <CardHeader className="bg-edu-purple/5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <UserCog className="h-5 w-5 text-edu-purple" />
+                      Admin Login
+                    </CardTitle>
+                    <CardDescription>
+                      Secure access for administrators and faculty
+                    </CardDescription>
+                  </div>
+                  <ShieldCheck className="h-8 w-8 text-edu-purple opacity-70" />
+                </div>
+              </CardHeader>
+              <form onSubmit={handleAdminLogin}>
+                <CardContent className="space-y-4 pt-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-id">Admin ID</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="admin-id" 
+                        type="text" 
+                        placeholder="ADM-12345" 
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="institution">Institution</Label>
+                    <div className="relative">
+                      <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="institution" 
+                        type="text" 
+                        placeholder="University Name" 
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="admin-password">Password</Label>
+                      <a 
+                        href="#" 
+                        className="text-xs text-muted-foreground underline-offset-2 hover:text-edu-purple hover:underline"
+                      >
+                        Reset credentials
+                      </a>
+                    </div>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="admin-password" 
+                        type={showAdminPassword ? "text" : "password"} 
+                        placeholder="••••••••" 
+                        className="pl-10 pr-10"
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-10 w-10 text-muted-foreground"
+                        onClick={() => setShowAdminPassword(!showAdminPassword)}
+                      >
+                        {showAdminPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        <span className="sr-only">Toggle password visibility</span>
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <input 
+                        type="checkbox" 
+                        id="admin-remember" 
+                        className="h-4 w-4 rounded border-gray-300 text-edu-purple focus:ring-edu-purple"
+                      />
+                      <label htmlFor="admin-remember" className="text-sm text-muted-foreground">
+                        Remember me
+                      </label>
+                    </div>
+                    <div>
+                      <select className="text-xs bg-transparent border-none text-muted-foreground focus:ring-0">
+                        <option value="admin">Administrator</option>
+                        <option value="professor">Professor</option>
+                        <option value="staff">Staff</option>
+                      </select>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button type="submit" className="w-full bg-edu-purple hover:bg-edu-purple-dark">
+                    Secure Login
                   </Button>
                 </CardFooter>
               </form>
@@ -173,9 +286,9 @@ export default function Login() {
               <p>password123</p>
             </div>
             <div className="rounded-md bg-muted p-2">
-              <p className="font-semibold">Teacher</p>
-              <p>teacher@university.edu</p>
-              <p>password123</p>
+              <p className="font-semibold">Admin</p>
+              <p>admin@university.edu</p>
+              <p>admin123</p>
             </div>
           </div>
         </div>
