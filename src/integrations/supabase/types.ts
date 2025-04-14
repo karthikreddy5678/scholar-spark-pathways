@@ -9,7 +9,204 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      courses: {
+        Row: {
+          course_id: string
+          created_at: string
+          credits: number
+          id: number
+          professor_id: string | null
+          semester: string
+          title: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          credits: number
+          id?: number
+          professor_id?: string | null
+          semester: string
+          title: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          credits?: number
+          id?: number
+          professor_id?: string | null
+          semester?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date: string
+          description: string | null
+          id: number
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date: string
+          description?: string | null
+          id?: number
+          title: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          description?: string | null
+          id?: number
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grades: {
+        Row: {
+          course_id: number | null
+          created_at: string
+          grade: number
+          id: number
+          locked: boolean | null
+          student_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          course_id?: number | null
+          created_at?: string
+          grade: number
+          id?: number
+          locked?: boolean | null
+          student_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          course_id?: number | null
+          created_at?: string
+          grade?: number
+          id?: number
+          locked?: boolean | null
+          student_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grades_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grades_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          audience: string
+          category: string
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          id: number
+          message: string
+          start_date: string
+          status: string | null
+          title: string
+        }
+        Insert: {
+          audience: string
+          category: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: number
+          message: string
+          start_date?: string
+          status?: string | null
+          title: string
+        }
+        Update: {
+          audience?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: number
+          message?: string
+          start_date?: string
+          status?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

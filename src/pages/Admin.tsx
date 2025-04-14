@@ -1,38 +1,26 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   UserRound, ClipboardList, BookOpen, Trophy, BellRing, 
   BarChart2, CalendarDays, FileText, Settings, Users, 
-  Search, LogOut, Grid, PlusCircle, Lock, UnlockIcon, Clock,
-  Mail, FileOutput, PieChart, CreditCard, GraduationCap,
-  Calendar, AlertCircle, Download, Upload, Pencil, Trash2,
-  CheckCircle2, Filter, Bell, BookOpenCheck, Award, TrendingUp,
-  GanttChartSquare
+  Search, LogOut, Grid
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { 
-  Table, TableBody, TableCell, TableHead, 
-  TableHeader, TableRow 
-} from "@/components/ui/table";
-import { 
-  Dialog, DialogContent, DialogDescription, 
-  DialogFooter, DialogHeader, DialogTitle, DialogTrigger 
-} from "@/components/ui/dialog";
-import { 
-  Select, SelectContent, SelectItem, 
-  SelectTrigger, SelectValue 
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
-import { DashboardCard } from "@/components/dashboard/DashboardCard";
+import Leaderboard from "@/components/admin/Leaderboard";
+import Analytics from "@/components/admin/Analytics";
+import Events from "@/components/admin/Events";
 
 export default function Admin() {
   const navigate = useNavigate();
+  const { isAdmin, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
   
-  // Mock data for recent students
+  useEffect(() => {
+    if (!isAdmin) {
+      navigate('/login');
+    }
+  }, [isAdmin, navigate]);
+
   const recentStudents = [
     { id: "STU-1001", name: "Emma Johnson", course: "Computer Science", status: "Active" },
     { id: "STU-1042", name: "Michael Chen", course: "Data Science", status: "Active" },
@@ -41,14 +29,12 @@ export default function Admin() {
     { id: "STU-0765", name: "Priya Patel", course: "Mathematics", status: "Inactive" },
   ];
 
-  // Mock data for upcoming events
   const upcomingEvents = [
     { id: 1, title: "Final Exam: Database Systems", date: "May 20, 2025", type: "Exam" },
     { id: 2, title: "Faculty Meeting", date: "May 15, 2025", type: "Meeting" },
     { id: 3, title: "AI Workshop for Students", date: "May 18, 2025", type: "Workshop" },
   ];
 
-  // Mock grades data
   const gradesData = [
     { id: 1, course: "Algorithms", students: 45, submitted: 42, pending: 3, locked: true },
     { id: 2, course: "Database Systems", students: 38, submitted: 38, pending: 0, locked: true },
@@ -56,7 +42,6 @@ export default function Admin() {
     { id: 4, course: "Web Development", students: 42, submitted: 40, pending: 2, locked: false },
   ];
 
-  // Mock courses data
   const coursesData = [
     { id: "CS301", title: "Advanced Algorithms", credits: 4, professor: "Dr. Jane Smith", semester: "Fall" },
     { id: "CS401", title: "Machine Learning", credits: 3, professor: "Dr. Mike Johnson", semester: "Spring" },
@@ -64,27 +49,14 @@ export default function Admin() {
     { id: "CS101", title: "Introduction to Programming", credits: 3, professor: "Dr. Robert Chen", semester: "Both" },
   ];
 
-  // Mock notifications data
   const notificationsData = [
     { id: 1, title: "Exam Announcement", category: "Academic", audience: "All Students", date: "May 5, 2025", status: "Active" },
     { id: 2, title: "Campus Event", category: "General", audience: "Computer Science", date: "May 12, 2025", status: "Scheduled" },
     { id: 3, title: "Submission Deadline", category: "Academic", audience: "Senior Year", date: "May 7, 2025", status: "Active" },
   ];
 
-  // Handle logout
-  const handleLogout = () => {
-    toast.success("Logged out successfully");
-    navigate("/login");
-  };
-
-  // Function to toggle grade lock status
-  const toggleLockStatus = (id: number) => {
-    toast.success(`Grade status toggled for course ID: ${id}`);
-  };
-
   return (
     <div className="flex h-screen bg-background">
-      {/* Sidebar */}
       <div className="w-64 bg-sidebar border-r border-border hidden md:block">
         <div className="flex items-center justify-center h-16 border-b border-border">
           <div className="flex items-center">
@@ -164,7 +136,7 @@ export default function Admin() {
             <Button 
               variant="outline" 
               className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={handleLogout}
+              onClick={signOut}
             >
               <LogOut className="mr-2 h-4 w-4" />
               Logout
@@ -173,9 +145,7 @@ export default function Admin() {
         </nav>
       </div>
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top navbar */}
         <header className="bg-background border-b border-border h-16 flex items-center justify-between px-6">
           <div className="flex items-center">
             <button className="md:hidden mr-4">
@@ -207,9 +177,7 @@ export default function Admin() {
           </div>
         </header>
 
-        {/* Content area */}
         <main className="flex-1 overflow-y-auto p-6 bg-background/50">
-          {/* Dashboard Tab */}
           {activeTab === "dashboard" && (
             <div className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -370,7 +338,6 @@ export default function Admin() {
             </div>
           )}
 
-          {/* Student Management Tab */}
           {activeTab === "students" && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
@@ -496,7 +463,6 @@ export default function Admin() {
             </div>
           )}
 
-          {/* Grade Management Tab */}
           {activeTab === "grades" && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
@@ -599,7 +565,6 @@ export default function Admin() {
             </div>
           )}
 
-          {/* Course Management Tab */}
           {activeTab === "courses" && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
@@ -773,6 +738,10 @@ export default function Admin() {
               </Tabs>
             </div>
           )}
+
+          {activeTab === "leaderboard" && <Leaderboard />}
+          {activeTab === "analytics" && <Analytics />}
+          {activeTab === "events" && <Events />}
         </main>
       </div>
     </div>
