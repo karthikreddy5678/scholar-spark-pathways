@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Bell, Menu, Moon, Search, Sun, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,6 +20,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { toast } from "sonner";
 
 interface NavbarProps {
   userRole?: "student" | "admin" | "teacher";
@@ -30,10 +31,16 @@ interface NavbarProps {
 export function Navbar({ userRole = "student", userName = "John Doe", userAvatar }: NavbarProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [notificationCount] = useState(3);
+  const navigate = useNavigate();
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
     document.documentElement.classList.toggle("dark");
+  };
+
+  const handleLogout = () => {
+    toast.success("Logged out successfully");
+    navigate("/login");
   };
 
   return (
@@ -50,14 +57,14 @@ export function Navbar({ userRole = "student", userName = "John Doe", userAvatar
             <SheetContent side="left" className="w-[240px] sm:w-[300px]">
               <SheetHeader>
                 <SheetTitle>
-                  <Link to="/" className="flex items-center gap-2">
+                  <Link to={userRole === "admin" ? "/admin" : "/dashboard"} className="flex items-center gap-2">
                     <span className="font-display text-xl font-bold text-edu-purple">ScholarSpark</span>
                   </Link>
                 </SheetTitle>
                 <SheetDescription>Navigation menu</SheetDescription>
               </SheetHeader>
               <nav className="flex flex-col gap-4 py-6">
-                <Link to="/" className="flex items-center gap-2 text-lg font-medium hover:text-edu-purple">
+                <Link to={userRole === "admin" ? "/admin" : "/dashboard"} className="flex items-center gap-2 text-lg font-medium hover:text-edu-purple">
                   Dashboard
                 </Link>
                 <Link to="/grades" className="flex items-center gap-2 text-lg font-medium hover:text-edu-purple">
@@ -78,14 +85,14 @@ export function Navbar({ userRole = "student", userName = "John Doe", userAvatar
             </SheetContent>
           </Sheet>
 
-          <Link to="/" className="flex items-center gap-2">
+          <Link to={userRole === "admin" ? "/admin" : "/dashboard"} className="flex items-center gap-2">
             <span className="hidden font-display text-xl font-bold text-edu-purple md:inline-block">
               ScholarSpark
             </span>
           </Link>
 
           <nav className="hidden md:flex md:items-center md:gap-6">
-            <Link to="/" className="text-sm font-medium hover:text-edu-purple">
+            <Link to={userRole === "admin" ? "/admin" : "/dashboard"} className="text-sm font-medium hover:text-edu-purple">
               Dashboard
             </Link>
             <Link to="/grades" className="text-sm font-medium hover:text-edu-purple">
@@ -153,7 +160,7 @@ export function Navbar({ userRole = "student", userName = "John Doe", userAvatar
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Log out</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

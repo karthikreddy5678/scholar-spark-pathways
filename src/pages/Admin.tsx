@@ -1,15 +1,32 @@
 
 import { useState } from "react";
-import { DashboardCard } from "@/components/dashboard/DashboardCard";
+import { useNavigate } from "react-router-dom";
 import { 
-  UserRound, ClipboardList, BookOpen, Trophy, 
-  BellRing, BarChart2, CalendarDays, FileText, 
-  Settings, Users, Search, LogOut
+  UserRound, ClipboardList, BookOpen, Trophy, BellRing, 
+  BarChart2, CalendarDays, FileText, Settings, Users, 
+  Search, LogOut, Grid, PlusCircle, Lock, UnlockIcon, Clock,
+  Mail, FileOutput, PieChart, CreditCard, GraduationCap,
+  Calendar, AlertCircle, Download, Upload, Pencil, Trash2,
+  CheckCircle2, Filter, Bell, BookOpenCheck, Award, TrendingUp,
+  GanttChartSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useNavigate } from "react-router-dom";
+import { 
+  Table, TableBody, TableCell, TableHead, 
+  TableHeader, TableRow 
+} from "@/components/ui/table";
+import { 
+  Dialog, DialogContent, DialogDescription, 
+  DialogFooter, DialogHeader, DialogTitle, DialogTrigger 
+} from "@/components/ui/dialog";
+import { 
+  Select, SelectContent, SelectItem, 
+  SelectTrigger, SelectValue 
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { DashboardCard } from "@/components/dashboard/DashboardCard";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -31,9 +48,38 @@ export default function Admin() {
     { id: 3, title: "AI Workshop for Students", date: "May 18, 2025", type: "Workshop" },
   ];
 
+  // Mock grades data
+  const gradesData = [
+    { id: 1, course: "Algorithms", students: 45, submitted: 42, pending: 3, locked: true },
+    { id: 2, course: "Database Systems", students: 38, submitted: 38, pending: 0, locked: true },
+    { id: 3, course: "Machine Learning", students: 50, submitted: 35, pending: 15, locked: false },
+    { id: 4, course: "Web Development", students: 42, submitted: 40, pending: 2, locked: false },
+  ];
+
+  // Mock courses data
+  const coursesData = [
+    { id: "CS301", title: "Advanced Algorithms", credits: 4, professor: "Dr. Jane Smith", semester: "Fall" },
+    { id: "CS401", title: "Machine Learning", credits: 3, professor: "Dr. Mike Johnson", semester: "Spring" },
+    { id: "CS201", title: "Database Systems", credits: 4, professor: "Dr. Sarah Lee", semester: "Fall" },
+    { id: "CS101", title: "Introduction to Programming", credits: 3, professor: "Dr. Robert Chen", semester: "Both" },
+  ];
+
+  // Mock notifications data
+  const notificationsData = [
+    { id: 1, title: "Exam Announcement", category: "Academic", audience: "All Students", date: "May 5, 2025", status: "Active" },
+    { id: 2, title: "Campus Event", category: "General", audience: "Computer Science", date: "May 12, 2025", status: "Scheduled" },
+    { id: 3, title: "Submission Deadline", category: "Academic", audience: "Senior Year", date: "May 7, 2025", status: "Active" },
+  ];
+
   // Handle logout
   const handleLogout = () => {
+    toast.success("Logged out successfully");
     navigate("/login");
+  };
+
+  // Function to toggle grade lock status
+  const toggleLockStatus = (id: number) => {
+    toast.success(`Grade status toggled for course ID: ${id}`);
   };
 
   return (
@@ -46,7 +92,7 @@ export default function Admin() {
             <h1 className="text-xl font-semibold text-foreground">Admin Panel</h1>
           </div>
         </div>
-        <nav className="mt-6">
+        <nav className="mt-6 flex flex-col h-[calc(100%-4rem)]">
           <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase">
             Main
           </div>
@@ -54,7 +100,7 @@ export default function Admin() {
             className={`w-full flex items-center px-4 py-2.5 text-sm font-medium ${activeTab === "dashboard" ? "bg-edu-purple/10 text-edu-purple border-r-2 border-edu-purple" : "text-foreground hover:bg-accent"}`}
             onClick={() => setActiveTab("dashboard")}
           >
-            <BarChart2 className="h-4 w-4 mr-3" />
+            <Grid className="h-4 w-4 mr-3" />
             Dashboard
           </button>
           <button 
@@ -114,7 +160,7 @@ export default function Admin() {
             Reports
           </button>
 
-          <div className="absolute bottom-0 w-64 border-t border-border p-4">
+          <div className="mt-auto border-t border-border p-4">
             <Button 
               variant="outline" 
               className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -154,15 +200,16 @@ export default function Admin() {
             </button>
             <div className="flex items-center">
               <div className="w-8 h-8 bg-edu-purple rounded-full flex items-center justify-center text-white font-semibold mr-2">
-                A
+                P
               </div>
-              <span className="font-medium text-sm">Admin</span>
+              <span className="font-medium text-sm">Professor</span>
             </div>
           </div>
         </header>
 
         {/* Content area */}
         <main className="flex-1 overflow-y-auto p-6 bg-background/50">
+          {/* Dashboard Tab */}
           {activeTab === "dashboard" && (
             <div className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -259,7 +306,9 @@ export default function Admin() {
                       </TableBody>
                     </Table>
                     <div className="mt-4">
-                      <Button variant="outline" size="sm" className="w-full">View All Students</Button>
+                      <Button variant="outline" size="sm" className="w-full" onClick={() => setActiveTab("students")}>
+                        View All Students
+                      </Button>
                     </div>
                   </div>
                 </DashboardCard>
@@ -288,7 +337,9 @@ export default function Admin() {
                         </div>
                       </div>
                     ))}
-                    <Button variant="outline" size="sm" className="w-full">Manage Calendar</Button>
+                    <Button variant="outline" size="sm" className="w-full" onClick={() => setActiveTab("events")}>
+                      Manage Calendar
+                    </Button>
                   </div>
                 </DashboardCard>
               </div>
@@ -319,11 +370,961 @@ export default function Admin() {
             </div>
           )}
 
-          {activeTab !== "dashboard" && (
+          {/* Student Management Tab */}
+          {activeTab === "students" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold">Student Management</h2>
+                  <p className="text-muted-foreground">View and manage student profiles</p>
+                </div>
+                <div className="flex space-x-2">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add Student
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add New Student</DialogTitle>
+                        <DialogDescription>Enter student details below to create a new profile.</DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <label htmlFor="name" className="text-right">Full Name</label>
+                          <Input id="name" placeholder="John Doe" className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <label htmlFor="email" className="text-right">Email</label>
+                          <Input id="email" placeholder="john@university.edu" className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <label htmlFor="id" className="text-right">Student ID</label>
+                          <Input id="id" placeholder="STU-1234" className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <label htmlFor="course" className="text-right">Course</label>
+                          <Select>
+                            <SelectTrigger className="col-span-3">
+                              <SelectValue placeholder="Select course" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="cs">Computer Science</SelectItem>
+                              <SelectItem value="eng">Engineering</SelectItem>
+                              <SelectItem value="math">Mathematics</SelectItem>
+                              <SelectItem value="phys">Physics</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button type="submit" onClick={() => toast.success("Student added successfully")}>
+                          Save Student
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                  
+                  <Button variant="outline">
+                    <Upload className="mr-2 h-4 w-4" />
+                    Import CSV
+                  </Button>
+                  
+                  <Button variant="outline">
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="flex gap-4 items-center">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Search students..." className="pl-10" />
+                </div>
+                <Button variant="outline" size="icon">
+                  <Filter className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <DashboardCard>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Course</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recentStudents.map((student) => (
+                      <TableRow key={student.id}>
+                        <TableCell className="font-medium">{student.id}</TableCell>
+                        <TableCell>{student.name}</TableCell>
+                        <TableCell>{student.course}</TableCell>
+                        <TableCell>
+                          <Select defaultValue={student.status.toLowerCase()}>
+                            <SelectTrigger className="w-[120px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="on leave">On Leave</SelectItem>
+                              <SelectItem value="inactive">Inactive</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button variant="ghost" size="icon">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </DashboardCard>
+            </div>
+          )}
+
+          {/* Grade Management Tab */}
+          {activeTab === "grades" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold">Grade Management</h2>
+                  <p className="text-muted-foreground">Manage and track student grades</p>
+                </div>
+                <div className="flex space-x-2">
+                  <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    New Grade Entry
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <DashboardCard
+                  title="Pending Grades"
+                  description="Need submission"
+                  icon={<Clock className="text-amber-500" />}
+                >
+                  <p className="text-3xl font-bold">20</p>
+                  <p className="text-sm text-muted-foreground">Across 4 courses</p>
+                </DashboardCard>
+                
+                <DashboardCard
+                  title="Locked Grades"
+                  description="Finalized & submitted"
+                  icon={<Lock className="text-green-500" />}
+                >
+                  <p className="text-3xl font-bold">156</p>
+                  <p className="text-sm text-muted-foreground">No changes allowed</p>
+                </DashboardCard>
+                
+                <DashboardCard
+                  title="Grade Appeals"
+                  description="Under review"
+                  icon={<AlertCircle className="text-red-500" />}
+                >
+                  <p className="text-3xl font-bold">8</p>
+                  <p className="text-sm text-muted-foreground">Requires attention</p>
+                </DashboardCard>
+                
+                <DashboardCard
+                  title="Upcoming Deadlines"
+                  description="Grade submission"
+                  icon={<Calendar className="text-blue-500" />}
+                >
+                  <p className="text-3xl font-bold">2</p>
+                  <p className="text-sm text-muted-foreground">Next: May 15, 2025</p>
+                </DashboardCard>
+              </div>
+              
+              <DashboardCard title="Course Grade Status">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Course</TableHead>
+                      <TableHead>Students</TableHead>
+                      <TableHead>Submitted</TableHead>
+                      <TableHead>Pending</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {gradesData.map((grade) => (
+                      <TableRow key={grade.id}>
+                        <TableCell className="font-medium">{grade.course}</TableCell>
+                        <TableCell>{grade.students}</TableCell>
+                        <TableCell>{grade.submitted}</TableCell>
+                        <TableCell>{grade.pending}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            grade.locked 
+                              ? "bg-green-100 text-green-800" 
+                              : "bg-amber-100 text-amber-800"
+                          }`}>
+                            {grade.locked ? "Locked" : "Open"}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button variant="outline" size="sm" onClick={() => toggleLockStatus(grade.id)}>
+                              {grade.locked ? 
+                                <><UnlockIcon className="mr-2 h-4 w-4" /> Unlock</> : 
+                                <><Lock className="mr-2 h-4 w-4" /> Lock</>
+                              }
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              <Pencil className="mr-2 h-4 w-4" /> Edit
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </DashboardCard>
+            </div>
+          )}
+
+          {/* Course Management Tab */}
+          {activeTab === "courses" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold">Course Management</h2>
+                  <p className="text-muted-foreground">Create and manage courses</p>
+                </div>
+                <div className="flex space-x-2">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add Course
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add New Course</DialogTitle>
+                        <DialogDescription>Enter course details to create a new course.</DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <label htmlFor="course-id" className="text-right">Course ID</label>
+                          <Input id="course-id" placeholder="CS101" className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <label htmlFor="course-title" className="text-right">Title</label>
+                          <Input id="course-title" placeholder="Introduction to Programming" className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <label htmlFor="credits" className="text-right">Credits</label>
+                          <Input id="credits" placeholder="3" type="number" className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <label htmlFor="professor" className="text-right">Professor</label>
+                          <Select>
+                            <SelectTrigger className="col-span-3">
+                              <SelectValue placeholder="Select professor" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="js">Dr. Jane Smith</SelectItem>
+                              <SelectItem value="mj">Dr. Mike Johnson</SelectItem>
+                              <SelectItem value="sl">Dr. Sarah Lee</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <label htmlFor="semester" className="text-right">Semester</label>
+                          <Select>
+                            <SelectTrigger className="col-span-3">
+                              <SelectValue placeholder="Select semester" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="fall">Fall</SelectItem>
+                              <SelectItem value="spring">Spring</SelectItem>
+                              <SelectItem value="both">Both</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button type="submit" onClick={() => toast.success("Course added successfully")}>
+                          Save Course
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </div>
+              
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <DashboardCard
+                  title="Active Courses"
+                  description="Current semester"
+                  icon={<BookOpen className="text-edu-purple" />}
+                >
+                  <p className="text-3xl font-bold">137</p>
+                </DashboardCard>
+                
+                <DashboardCard
+                  title="Departments"
+                  description="Offering courses"
+                  icon={<GanttChartSquare className="text-edu-purple" />}
+                >
+                  <p className="text-3xl font-bold">12</p>
+                </DashboardCard>
+                
+                <DashboardCard
+                  title="Professors"
+                  description="Teaching staff"
+                  icon={<GraduationCap className="text-edu-purple" />}
+                >
+                  <p className="text-3xl font-bold">67</p>
+                </DashboardCard>
+                
+                <DashboardCard
+                  title="Credit Hours"
+                  description="Total offered"
+                  icon={<CreditCard className="text-edu-purple" />}
+                >
+                  <p className="text-3xl font-bold">412</p>
+                </DashboardCard>
+              </div>
+              
+              <Tabs defaultValue="active">
+                <TabsList>
+                  <TabsTrigger value="active">Active Courses</TabsTrigger>
+                  <TabsTrigger value="archived">Archived Courses</TabsTrigger>
+                  <TabsTrigger value="upcoming">Upcoming Courses</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="active" className="mt-4">
+                  <DashboardCard>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Course ID</TableHead>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Credits</TableHead>
+                          <TableHead>Professor</TableHead>
+                          <TableHead>Semester</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {coursesData.map((course) => (
+                          <TableRow key={course.id}>
+                            <TableCell className="font-medium">{course.id}</TableCell>
+                            <TableCell>{course.title}</TableCell>
+                            <TableCell>{course.credits}</TableCell>
+                            <TableCell>{course.professor}</TableCell>
+                            <TableCell>{course.semester}</TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button variant="ghost" size="icon">
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="text-destructive">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </DashboardCard>
+                </TabsContent>
+                
+                <TabsContent value="archived" className="mt-4">
+                  <div className="flex flex-col items-center justify-center p-12">
+                    <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium">No Archived Courses</h3>
+                    <p className="text-muted-foreground">All past courses are still active</p>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="upcoming" className="mt-4">
+                  <div className="flex flex-col items-center justify-center p-12">
+                    <Calendar className="h-16 w-16 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium">Upcoming Courses</h3>
+                    <p className="text-muted-foreground">Next semester courses will appear here</p>
+                    <Button className="mt-4">Plan Next Semester</Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
+
+          {/* Leaderboard Tab */}
+          {activeTab === "leaderboard" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold">Leaderboard & Achievements</h2>
+                  <p className="text-muted-foreground">Manage student rankings and badges</p>
+                </div>
+                <div className="flex space-x-2">
+                  <Button>
+                    <Award className="mr-2 h-4 w-4" />
+                    Create New Badge
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <DashboardCard
+                  title="Top Performers"
+                  description="Highest GPA students"
+                  icon={<Trophy className="text-amber-500" />}
+                >
+                  <div className="space-y-4 mt-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-800 mr-3">1</div>
+                        <div>
+                          <p className="font-medium">Emma Johnson</p>
+                          <p className="text-sm text-muted-foreground">Computer Science</p>
+                        </div>
+                      </div>
+                      <p className="font-semibold">3.95</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-800 mr-3">2</div>
+                        <div>
+                          <p className="font-medium">Michael Chen</p>
+                          <p className="text-sm text-muted-foreground">Data Science</p>
+                        </div>
+                      </div>
+                      <p className="font-semibold">3.92</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-50 text-amber-800 mr-3">3</div>
+                        <div>
+                          <p className="font-medium">Sarah Williams</p>
+                          <p className="text-sm text-muted-foreground">Engineering</p>
+                        </div>
+                      </div>
+                      <p className="font-semibold">3.89</p>
+                    </div>
+                  </div>
+                </DashboardCard>
+                
+                <DashboardCard
+                  title="Most Badges"
+                  description="Achievement leaders"
+                  icon={<Award className="text-edu-purple" />}
+                >
+                  <div className="space-y-4 mt-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-edu-purple/20 text-edu-purple mr-3">1</div>
+                        <div>
+                          <p className="font-medium">James Rodriguez</p>
+                          <p className="text-sm text-muted-foreground">Physics</p>
+                        </div>
+                      </div>
+                      <p className="font-semibold">12 badges</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-edu-purple/10 text-edu-purple mr-3">2</div>
+                        <div>
+                          <p className="font-medium">Priya Patel</p>
+                          <p className="text-sm text-muted-foreground">Mathematics</p>
+                        </div>
+                      </div>
+                      <p className="font-semibold">10 badges</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-edu-purple/5 text-edu-purple mr-3">3</div>
+                        <div>
+                          <p className="font-medium">Emma Johnson</p>
+                          <p className="text-sm text-muted-foreground">Computer Science</p>
+                        </div>
+                      </div>
+                      <p className="font-semibold">8 badges</p>
+                    </div>
+                  </div>
+                </DashboardCard>
+                
+                <DashboardCard
+                  title="Most Improved"
+                  description="Greatest progress"
+                  icon={<TrendingUp className="text-green-500" />}
+                >
+                  <div className="space-y-4 mt-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-800 mr-3">1</div>
+                        <div>
+                          <p className="font-medium">Alex Thompson</p>
+                          <p className="text-sm text-muted-foreground">Chemistry</p>
+                        </div>
+                      </div>
+                      <p className="font-semibold">+1.2 GPA</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-50 text-green-800 mr-3">2</div>
+                        <div>
+                          <p className="font-medium">Sophia Garcia</p>
+                          <p className="text-sm text-muted-foreground">Biology</p>
+                        </div>
+                      </div>
+                      <p className="font-semibold">+0.9 GPA</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-50 text-green-700 mr-3">3</div>
+                        <div>
+                          <p className="font-medium">Lucas Kim</p>
+                          <p className="text-sm text-muted-foreground">Economics</p>
+                        </div>
+                      </div>
+                      <p className="font-semibold">+0.8 GPA</p>
+                    </div>
+                  </div>
+                </DashboardCard>
+              </div>
+              
+              <Tabs defaultValue="badges">
+                <TabsList>
+                  <TabsTrigger value="badges">Achievement Badges</TabsTrigger>
+                  <TabsTrigger value="department">Department Rankings</TabsTrigger>
+                  <TabsTrigger value="custom">Custom Leaderboards</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="badges" className="mt-4">
+                  <DashboardCard>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      <div className="flex flex-col p-4 border rounded-lg bg-muted/20">
+                        <div className="flex justify-between mb-2">
+                          <div className="p-2 bg-yellow-100 rounded-full text-yellow-800">
+                            <Trophy className="h-5 w-5" />
+                          </div>
+                          <Button variant="ghost" size="sm">Edit</Button>
+                        </div>
+                        <h3 className="font-medium mb-1">Top Performer</h3>
+                        <p className="text-sm text-muted-foreground mb-2">Ranked in the top 5% of class</p>
+                        <div className="flex justify-between mt-auto pt-2 border-t">
+                          <span className="text-xs text-muted-foreground">Awarded: 142 times</span>
+                          <span className="text-xs font-medium text-green-600">Automatic</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col p-4 border rounded-lg bg-muted/20">
+                        <div className="flex justify-between mb-2">
+                          <div className="p-2 bg-blue-100 rounded-full text-blue-800">
+                            <CheckCircle2 className="h-5 w-5" />
+                          </div>
+                          <Button variant="ghost" size="sm">Edit</Button>
+                        </div>
+                        <h3 className="font-medium mb-1">Perfect Attendance</h3>
+                        <p className="text-sm text-muted-foreground mb-2">100% attendance for semester</p>
+                        <div className="flex justify-between mt-auto pt-2 border-t">
+                          <span className="text-xs text-muted-foreground">Awarded: 78 times</span>
+                          <span className="text-xs font-medium text-green-600">Automatic</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col p-4 border rounded-lg bg-muted/20">
+                        <div className="flex justify-between mb-2">
+                          <div className="p-2 bg-green-100 rounded-full text-green-800">
+                            <TrendingUp className="h-5 w-5" />
+                          </div>
+                          <Button variant="ghost" size="sm">Edit</Button>
+                        </div>
+                        <h3 className="font-medium mb-1">Most Improved</h3>
+                        <p className="text-sm text-muted-foreground mb-2">Greatest grade improvement</p>
+                        <div className="flex justify-between mt-auto pt-2 border-t">
+                          <span className="text-xs text-muted-foreground">Awarded: 56 times</span>
+                          <span className="text-xs font-medium text-amber-600">Manual</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col p-4 border rounded-lg bg-muted/20">
+                        <div className="flex justify-between mb-2">
+                          <div className="p-2 bg-purple-100 rounded-full text-purple-800">
+                            <BookOpenCheck className="h-5 w-5" />
+                          </div>
+                          <Button variant="ghost" size="sm">Edit</Button>
+                        </div>
+                        <h3 className="font-medium mb-1">Bookworm</h3>
+                        <p className="text-sm text-muted-foreground mb-2">Completed all reading materials</p>
+                        <div className="flex justify-between mt-auto pt-2 border-t">
+                          <span className="text-xs text-muted-foreground">Awarded: 42 times</span>
+                          <span className="text-xs font-medium text-amber-600">Manual</span>
+                        </div>
+                      </div>
+                    </div>
+                  </DashboardCard>
+                </TabsContent>
+                
+                <TabsContent value="department" className="mt-4">
+                  <DashboardCard>
+                    {/* Department Rankings Content */}
+                    <div className="flex flex-col items-center justify-center p-8">
+                      <BarChart2 className="h-16 w-16 text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-medium">Department Rankings</h3>
+                      <p className="text-muted-foreground mb-4">Compare performance across departments</p>
+                      <Button>Generate Report</Button>
+                    </div>
+                  </DashboardCard>
+                </TabsContent>
+                
+                <TabsContent value="custom" className="mt-4">
+                  <DashboardCard>
+                    {/* Custom Leaderboards Content */}
+                    <div className="flex flex-col items-center justify-center p-8">
+                      <PieChart className="h-16 w-16 text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-medium">Custom Leaderboards</h3>
+                      <p className="text-muted-foreground mb-4">Create specialized ranking systems</p>
+                      <Button>Create Leaderboard</Button>
+                    </div>
+                  </DashboardCard>
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
+
+          {/* Notification Manager Tab */}
+          {activeTab === "notifications" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold">Notification Manager</h2>
+                  <p className="text-muted-foreground">Create and manage notifications</p>
+                </div>
+                <div className="flex space-x-2">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <BellRing className="mr-2 h-4 w-4" />
+                        Create Notification
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Create New Notification</DialogTitle>
+                        <DialogDescription>Create a new notification to send to students.</DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <label htmlFor="notif-title" className="text-right">Title</label>
+                          <Input id="notif-title" placeholder="Exam Announcement" className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <label htmlFor="notif-message" className="text-right">Message</label>
+                          <Input id="notif-message" placeholder="Final exams will start on May 20" className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <label htmlFor="notif-category" className="text-right">Category</label>
+                          <Select>
+                            <SelectTrigger className="col-span-3">
+                              <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="academic">Academic</SelectItem>
+                              <SelectItem value="general">General</SelectItem>
+                              <SelectItem value="emergency">Emergency</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <label htmlFor="notif-audience" className="text-right">Audience</label>
+                          <Select>
+                            <SelectTrigger className="col-span-3">
+                              <SelectValue placeholder="Select audience" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Students</SelectItem>
+                              <SelectItem value="cs">Computer Science</SelectItem>
+                              <SelectItem value="eng">Engineering</SelectItem>
+                              <SelectItem value="senior">Senior Year</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button type="submit" onClick={() => toast.success("Notification created and sent!")}>
+                          Send Notification
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </div>
+              
+              <div className="grid gap-6 md:grid-cols-3">
+                <DashboardCard
+                  title="Active Notifications"
+                  description="Currently visible"
+                  icon={<Bell className="text-green-500" />}
+                >
+                  <p className="text-3xl font-bold">5</p>
+                </DashboardCard>
+                
+                <DashboardCard
+                  title="Scheduled"
+                  description="Pending delivery"
+                  icon={<Calendar className="text-amber-500" />}
+                >
+                  <p className="text-3xl font-bold">2</p>
+                </DashboardCard>
+                
+                <DashboardCard
+                  title="Read Rate"
+                  description="Average engagement"
+                  icon={<CheckCircle2 className="text-blue-500" />}
+                >
+                  <p className="text-3xl font-bold">76%</p>
+                </DashboardCard>
+              </div>
+              
+              <DashboardCard>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Audience</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {notificationsData.map((notification) => (
+                      <TableRow key={notification.id}>
+                        <TableCell className="font-medium">{notification.title}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            notification.category === "Academic" 
+                              ? "bg-blue-100 text-blue-800" 
+                              : notification.category === "General"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}>
+                            {notification.category}
+                          </span>
+                        </TableCell>
+                        <TableCell>{notification.audience}</TableCell>
+                        <TableCell>{notification.date}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            notification.status === "Active" 
+                              ? "bg-green-100 text-green-800" 
+                              : "bg-amber-100 text-amber-800"
+                          }`}>
+                            {notification.status}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button variant="ghost" size="icon">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon">
+                              <Mail className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </DashboardCard>
+            </div>
+          )}
+
+          {/* Reports Tab */}
+          {activeTab === "reports" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold">Reports & Downloads</h2>
+                  <p className="text-muted-foreground">Generate and download academic reports</p>
+                </div>
+              </div>
+              
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <DashboardCard
+                  title="Student Grade Reports"
+                  description="Individual performance summaries"
+                  icon={<FileText className="text-edu-purple" />}
+                  onClick={() => toast.success("Generating Student Grade Reports...")}
+                >
+                  <p className="text-sm text-muted-foreground mb-4">Generate complete grade reports for individual students or student groups.</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs bg-muted px-2 py-1 rounded">PDF / Excel</span>
+                    <Button variant="outline" size="sm">
+                      <Download className="mr-2 h-4 w-4" />
+                      Generate
+                    </Button>
+                  </div>
+                </DashboardCard>
+                
+                <DashboardCard
+                  title="Course Completion Summary"
+                  description="Pass/fail statistics"
+                  icon={<BookOpenCheck className="text-edu-purple" />}
+                  onClick={() => toast.success("Generating Course Completion Summary...")}
+                >
+                  <p className="text-sm text-muted-foreground mb-4">Course-wise completion rates, average grades, and performance trends.</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs bg-muted px-2 py-1 rounded">PDF / Excel</span>
+                    <Button variant="outline" size="sm">
+                      <Download className="mr-2 h-4 w-4" />
+                      Generate
+                    </Button>
+                  </div>
+                </DashboardCard>
+                
+                <DashboardCard
+                  title="Department Performance"
+                  description="Comparative analysis"
+                  icon={<BarChart2 className="text-edu-purple" />}
+                  onClick={() => toast.success("Generating Department Performance Report...")}
+                >
+                  <p className="text-sm text-muted-foreground mb-4">Compare performance metrics across different departments and courses.</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs bg-muted px-2 py-1 rounded">PDF / Excel</span>
+                    <Button variant="outline" size="sm">
+                      <Download className="mr-2 h-4 w-4" />
+                      Generate
+                    </Button>
+                  </div>
+                </DashboardCard>
+                
+                <DashboardCard
+                  title="Academic Calendar"
+                  description="Scheduled events"
+                  icon={<Calendar className="text-edu-purple" />}
+                  onClick={() => toast.success("Generating Academic Calendar...")}
+                >
+                  <p className="text-sm text-muted-foreground mb-4">Complete academic schedule with exams, events, and important deadlines.</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs bg-muted px-2 py-1 rounded">PDF / iCal</span>
+                    <Button variant="outline" size="sm">
+                      <Download className="mr-2 h-4 w-4" />
+                      Generate
+                    </Button>
+                  </div>
+                </DashboardCard>
+                
+                <DashboardCard
+                  title="Attendance Records"
+                  description="Student presence tracking"
+                  icon={<CheckCircle2 className="text-edu-purple" />}
+                  onClick={() => toast.success("Generating Attendance Records...")}
+                >
+                  <p className="text-sm text-muted-foreground mb-4">Comprehensive attendance records for all courses and students.</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs bg-muted px-2 py-1 rounded">PDF / Excel</span>
+                    <Button variant="outline" size="sm">
+                      <Download className="mr-2 h-4 w-4" />
+                      Generate
+                    </Button>
+                  </div>
+                </DashboardCard>
+                
+                <DashboardCard
+                  title="Custom Report"
+                  description="Build your own report"
+                  icon={<Settings className="text-edu-purple" />}
+                  onClick={() => toast.success("Preparing Custom Report Builder...")}
+                >
+                  <p className="text-sm text-muted-foreground mb-4">Build custom reports by selecting specific data points and metrics.</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs bg-muted px-2 py-1 rounded">Multiple Formats</span>
+                    <Button variant="outline" size="sm">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Configure
+                    </Button>
+                  </div>
+                </DashboardCard>
+              </div>
+              
+              <DashboardCard title="Recent Downloads" description="Your generated reports">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Report Name</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Generated On</TableHead>
+                      <TableHead>Format</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-medium">Spring 2025 Grade Summary</TableCell>
+                      <TableCell>Grade Report</TableCell>
+                      <TableCell>April 10, 2025</TableCell>
+                      <TableCell>PDF</TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm">
+                          <Download className="mr-2 h-4 w-4" />
+                          Download
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">CS Department Performance</TableCell>
+                      <TableCell>Department Analysis</TableCell>
+                      <TableCell>April 8, 2025</TableCell>
+                      <TableCell>Excel</TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm">
+                          <Download className="mr-2 h-4 w-4" />
+                          Download
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Upcoming Exams Schedule</TableCell>
+                      <TableCell>Academic Calendar</TableCell>
+                      <TableCell>April 5, 2025</TableCell>
+                      <TableCell>PDF</TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm">
+                          <Download className="mr-2 h-4 w-4" />
+                          Download
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </DashboardCard>
+            </div>
+          )}
+
+          {/* Analytics, Events, and other tabs */}
+          {(activeTab === "analytics" || activeTab === "events") && (
             <div className="rounded-lg border bg-card p-8 text-card-foreground shadow-sm">
               <h2 className="text-2xl font-bold mb-6">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Module</h2>
               <p className="text-muted-foreground">This {activeTab} module is currently under development. Please check back soon.</p>
-              <Button className="mt-4 bg-edu-purple hover:bg-edu-purple-dark">
+              <Button className="mt-4 bg-edu-purple hover:bg-edu-purple-dark" onClick={() => setActiveTab("dashboard")}>
                 Back to Dashboard
               </Button>
             </div>
