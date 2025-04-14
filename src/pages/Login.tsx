@@ -6,29 +6,30 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { GraduationCap, AtSign, Lock, Eye, EyeOff, User, Key, UserCog, Building, ShieldCheck } from "lucide-react";
-import { DashboardCard } from "@/components/dashboard/DashboardCard";
+import { GraduationCap, AtSign, Lock, Eye, EyeOff, User, Building } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
-  const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
   
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent, role: 'student' | 'professor') => {
     e.preventDefault();
-    // In a real application, this would authenticate the user
-    navigate("/");
-  };
-
-  const handleAdminLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    // In a real application, this would authenticate the admin
-    navigate("/admin");
+    // In a real app, this would authenticate with a backend
+    if (email && password) {
+      toast.success(`Logged in as ${role}`);
+      navigate(role === 'professor' ? '/admin' : '/dashboard');
+    } else {
+      toast.error("Please fill in all fields");
+    }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-edu-purple-light/20 via-background to-edu-blue/10 px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-edu-purple-light/20 via-background to-edu-blue/10">
+      <div className="w-full max-w-md px-4">
         <div className="mb-6 text-center">
           <div className="flex items-center justify-center">
             <GraduationCap className="mr-2 h-8 w-8 text-edu-purple" />
@@ -37,22 +38,24 @@ export default function Login() {
           <p className="mt-2 text-muted-foreground">Intelligent Student Management System</p>
         </div>
         
-        <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="login">Student</TabsTrigger>
-            <TabsTrigger value="admin">Admin</TabsTrigger>
-            <TabsTrigger value="register">Register</TabsTrigger>
+        <Tabs defaultValue="student" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="student">Student</TabsTrigger>
+            <TabsTrigger value="professor">Professor</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="login">
-            <Card>
-              <CardHeader>
-                <CardTitle>Student Login</CardTitle>
+          <TabsContent value="student">
+            <Card className="border-edu-purple/30">
+              <CardHeader className="space-y-1">
+                <CardTitle className="text-2xl flex items-center gap-2">
+                  <User className="h-5 w-5 text-edu-purple" />
+                  Student Login
+                </CardTitle>
                 <CardDescription>
-                  Enter your credentials to access your student account
+                  Sign in to access your academic dashboard
                 </CardDescription>
               </CardHeader>
-              <form onSubmit={handleLogin}>
+              <form onSubmit={(e) => handleLogin(e, 'student')}>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
@@ -61,8 +64,10 @@ export default function Login() {
                       <Input 
                         id="email" 
                         type="email" 
-                        placeholder="name@university.edu" 
+                        placeholder="student@university.edu" 
                         className="pl-10"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         required
                       />
                     </div>
@@ -70,12 +75,12 @@ export default function Login() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="password">Password</Label>
-                      <a 
-                        href="#" 
-                        className="text-xs text-muted-foreground underline-offset-2 hover:text-edu-purple hover:underline"
+                      <Button 
+                        variant="link" 
+                        className="px-0 text-xs text-muted-foreground hover:text-edu-purple"
                       >
                         Forgot password?
-                      </a>
+                      </Button>
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -84,13 +89,15 @@ export default function Login() {
                         type={showPassword ? "text" : "password"} 
                         placeholder="••••••••" 
                         className="pl-10 pr-10"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                         required
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="absolute right-0 top-0 h-10 w-10 text-muted-foreground"
+                        className="absolute right-0 top-0 h-10 w-10 text-muted-foreground hover:text-edu-purple"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -103,6 +110,8 @@ export default function Login() {
                       type="checkbox" 
                       id="remember" 
                       className="h-4 w-4 rounded border-gray-300 text-edu-purple focus:ring-edu-purple"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
                     />
                     <label htmlFor="remember" className="text-sm text-muted-foreground">
                       Remember me
@@ -110,7 +119,7 @@ export default function Login() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" className="w-full bg-edu-purple hover:bg-edu-purple-dark">
+                  <Button type="submit" className="w-full bg-edu-purple hover:bg-edu-purple/90">
                     Sign In
                   </Button>
                 </CardFooter>
@@ -118,77 +127,63 @@ export default function Login() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="admin">
+          <TabsContent value="professor">
             <Card className="border-edu-purple/30">
-              <CardHeader className="bg-edu-purple/5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <UserCog className="h-5 w-5 text-edu-purple" />
-                      Admin Login
-                    </CardTitle>
-                    <CardDescription>
-                      Secure access for administrators and faculty
-                    </CardDescription>
-                  </div>
-                  <ShieldCheck className="h-8 w-8 text-edu-purple opacity-70" />
-                </div>
+              <CardHeader className="space-y-1">
+                <CardTitle className="text-2xl flex items-center gap-2">
+                  <Building className="h-5 w-5 text-edu-purple" />
+                  Professor Login
+                </CardTitle>
+                <CardDescription>
+                  Access your administrative dashboard
+                </CardDescription>
               </CardHeader>
-              <form onSubmit={handleAdminLogin}>
-                <CardContent className="space-y-4 pt-5">
+              <form onSubmit={(e) => handleLogin(e, 'professor')}>
+                <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="admin-id">Admin ID</Label>
+                    <Label htmlFor="prof-email">Email</Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <AtSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input 
-                        id="admin-id" 
-                        type="text" 
-                        placeholder="ADM-12345" 
+                        id="prof-email" 
+                        type="email" 
+                        placeholder="professor@university.edu" 
                         className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="institution">Institution</Label>
-                    <div className="relative">
-                      <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        id="institution" 
-                        type="text" 
-                        placeholder="University Name" 
-                        className="pl-10"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         required
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="admin-password">Password</Label>
-                      <a 
-                        href="#" 
-                        className="text-xs text-muted-foreground underline-offset-2 hover:text-edu-purple hover:underline"
+                      <Label htmlFor="prof-password">Password</Label>
+                      <Button 
+                        variant="link" 
+                        className="px-0 text-xs text-muted-foreground hover:text-edu-purple"
                       >
                         Reset credentials
-                      </a>
+                      </Button>
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input 
-                        id="admin-password" 
-                        type={showAdminPassword ? "text" : "password"} 
+                        id="prof-password" 
+                        type={showPassword ? "text" : "password"} 
                         placeholder="••••••••" 
                         className="pl-10 pr-10"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                         required
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="absolute right-0 top-0 h-10 w-10 text-muted-foreground"
-                        onClick={() => setShowAdminPassword(!showAdminPassword)}
+                        className="absolute right-0 top-0 h-10 w-10 text-muted-foreground hover:text-edu-purple"
+                        onClick={() => setShowPassword(!showPassword)}
                       >
-                        {showAdminPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         <span className="sr-only">Toggle password visibility</span>
                       </Button>
                     </div>
@@ -197,82 +192,23 @@ export default function Login() {
                     <div className="flex items-center space-x-2">
                       <input 
                         type="checkbox" 
-                        id="admin-remember" 
+                        id="prof-remember" 
                         className="h-4 w-4 rounded border-gray-300 text-edu-purple focus:ring-edu-purple"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
                       />
-                      <label htmlFor="admin-remember" className="text-sm text-muted-foreground">
+                      <label htmlFor="prof-remember" className="text-sm text-muted-foreground">
                         Remember me
                       </label>
-                    </div>
-                    <div>
-                      <select className="text-xs bg-transparent border-none text-muted-foreground focus:ring-0">
-                        <option value="admin">Administrator</option>
-                        <option value="professor">Professor</option>
-                        <option value="staff">Staff</option>
-                      </select>
                     </div>
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" className="w-full bg-edu-purple hover:bg-edu-purple-dark">
+                  <Button type="submit" className="w-full bg-edu-purple hover:bg-edu-purple/90">
                     Secure Login
                   </Button>
                 </CardFooter>
               </form>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="register">
-            <Card>
-              <CardHeader>
-                <CardTitle>Create an account</CardTitle>
-                <CardDescription>
-                  Enter your details to register for ScholarSpark
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="first-name">First Name</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input id="first-name" placeholder="John" className="pl-10" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="last-name">Last Name</Label>
-                    <Input id="last-name" placeholder="Doe" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="student-id">Student ID</Label>
-                  <div className="relative">
-                    <Key className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="student-id" placeholder="1234567890" className="pl-10" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="reg-email">Email</Label>
-                  <div className="relative">
-                    <AtSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="reg-email" type="email" placeholder="name@university.edu" className="pl-10" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="reg-password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="reg-password" type="password" placeholder="••••••••" className="pl-10" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm Password</Label>
-                  <Input id="confirm-password" type="password" placeholder="••••••••" />
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button className="w-full bg-edu-purple hover:bg-edu-purple-dark">Register</Button>
-              </CardFooter>
             </Card>
           </TabsContent>
         </Tabs>
@@ -286,8 +222,8 @@ export default function Login() {
               <p>password123</p>
             </div>
             <div className="rounded-md bg-muted p-2">
-              <p className="font-semibold">Admin</p>
-              <p>admin@university.edu</p>
+              <p className="font-semibold">Professor</p>
+              <p>professor@university.edu</p>
               <p>admin123</p>
             </div>
           </div>
