@@ -15,8 +15,10 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
+        console.log("ProtectedRoute: No user, redirecting to login");
         navigate('/login', { replace: true });
       } else if (requireAdmin && !isAdmin) {
+        console.log("ProtectedRoute: User is not admin, redirecting to dashboard");
         navigate('/dashboard', { replace: true });
       }
     }

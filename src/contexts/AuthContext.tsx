@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 
 interface AuthContextType {
   user: User | null;
@@ -24,15 +25,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   useEffect(() => {
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
+        console.log("Auth state changed:", event, currentSession?.user?.email);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         setIsLoading(false);
       }
     );
 
+    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log("Initial session check:", currentSession?.user?.email);
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       setIsLoading(false);
@@ -43,20 +48,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (user) {
-      supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-        .then(({ data }) => {
-          const isUserAdmin = data?.role === 'professor';
-          setIsAdmin(isUserAdmin);
-          
-          // Handle redirection after login based on role
-          if (location.pathname === '/login') {
-            navigate(isUserAdmin ? '/admin' : '/dashboard', { replace: true });
-          }
-        });
+      // Get user profile data with role
+      const fetchUserProfile = async () => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) {
+          console.error("Error fetching user profile:", error);
+          return;
+        }
+        
+        console.log("User profile:", data);
+        const isUserAdmin = data?.role === 'professor';
+        setIsAdmin(isUserAdmin);
+        
+        // Handle redirection after login based on role
+        if (location.pathname === '/login') {
+          const redirectTo = isUserAdmin ? '/admin' : '/dashboard';
+          console.log(`Redirecting to ${redirectTo} based on role:`, data?.role);
+          navigate(redirectTo, { replace: true });
+        }
+      };
+      
+      // Use setTimeout to prevent potential deadlock with onAuthStateChange
+      setTimeout(() => {
+        fetchUserProfile();
+      }, 0);
     }
   }, [user, navigate, location.pathname]);
 
@@ -65,20 +85,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!isLoading && !user) {
       const protectedRoutes = ['/dashboard', '/admin', '/grades', '/courses', '/leaderboard'];
       if (protectedRoutes.includes(location.pathname)) {
+        console.log("Redirecting to login from protected route:", location.pathname);
         navigate('/login', { replace: true });
       }
     }
   }, [user, isLoading, location.pathname, navigate]);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
+    console.log("Attempting signin with:", email);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password 
+      });
+      
+      if (error) throw error;
+      
+      console.log("Sign in successful:", data);
+      return data;
+    } catch (error) {
+      console.error("Sign in error:", error);
+      throw error;
+    }
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    navigate('/login');
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: "Signed out",
+        description: "You have been successfully signed out"
+      });
+      
+      navigate('/login');
+    } catch (error) {
+      console.error("Sign out error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to sign out",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
