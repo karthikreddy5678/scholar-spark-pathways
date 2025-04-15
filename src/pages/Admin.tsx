@@ -4,11 +4,44 @@ import { useAuth } from "@/contexts/AuthContext";
 import { 
   UserRound, ClipboardList, BookOpen, Trophy, BellRing, 
   BarChart2, CalendarDays, FileText, Settings, Users, 
-  Search, LogOut, Grid
+  Search, LogOut, Grid, PlusCircle, Pencil, Trash2, Filter,
+  Upload, Download, Clock, Lock, AlertCircle, Calendar,
+  GanttChartSquare, GraduationCap, CreditCard, FileOutput,
+  UnlockIcon
 } from "lucide-react";
 import Leaderboard from "@/components/admin/Leaderboard";
 import Analytics from "@/components/admin/Analytics";
 import Events from "@/components/admin/Events";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { DashboardCard } from "@/components/dashboard/DashboardCard";
+import { 
+  Table, TableBody, TableCell, TableHead, 
+  TableHeader, TableRow 
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { toast } from "@/hooks/use-toast";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -54,6 +87,13 @@ export default function Admin() {
     { id: 2, title: "Campus Event", category: "General", audience: "Computer Science", date: "May 12, 2025", status: "Scheduled" },
     { id: 3, title: "Submission Deadline", category: "Academic", audience: "Senior Year", date: "May 7, 2025", status: "Active" },
   ];
+
+  const toggleLockStatus = (gradeId: number) => {
+    toast({
+      title: "Grade status updated",
+      description: "Grade lock status has been updated successfully."
+    });
+  };
 
   return (
     <div className="flex h-screen bg-background">
