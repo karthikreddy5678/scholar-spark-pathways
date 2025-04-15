@@ -51,6 +51,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (user) {
+      // Check user_metadata first for role
+      const userMetadataRole = user.user_metadata?.role;
+      console.log("User metadata role:", userMetadataRole);
+      
       // Get user profile data with role
       const fetchUserProfile = async () => {
         const { data, error } = await supabase
@@ -64,14 +68,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
         
-        console.log("User profile:", data);
-        const isUserAdmin = data?.role === 'professor';
+        console.log("User profile from database:", data);
+        
+        // Prioritize role from user_metadata if available
+        const roleToUse = userMetadataRole || data?.role;
+        console.log("Using role:", roleToUse);
+        
+        const isUserAdmin = roleToUse === 'professor';
         setIsAdmin(isUserAdmin);
         
         // Handle redirection after login based on role
         if (location.pathname === '/login') {
           const redirectTo = isUserAdmin ? '/admin' : '/dashboard';
-          console.log(`Redirecting to ${redirectTo} based on role:`, data?.role);
+          console.log(`Redirecting to ${redirectTo} based on role:`, roleToUse);
           navigate(redirectTo, { replace: true });
         }
       };
