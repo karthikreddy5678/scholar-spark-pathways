@@ -9,7 +9,10 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{
+    user: User | null;
+    session: Session | null;
+  } | undefined>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
 }
