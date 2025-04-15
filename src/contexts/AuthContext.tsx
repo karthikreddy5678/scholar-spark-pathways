@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 interface AuthContextType {
   user: User | null;
@@ -21,6 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -48,10 +49,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', user.id)
         .single()
         .then(({ data }) => {
-          setIsAdmin(data?.role === 'professor');
+          const isUserAdmin = data?.role === 'professor';
+          setIsAdmin(isUserAdmin);
+          
+          // Handle redirection after login based on role
+          if (location.pathname === '/login') {
+            navigate(isUserAdmin ? '/admin' : '/dashboard', { replace: true });
+          }
         });
     }
-  }, [user]);
+  }, [user, navigate, location.pathname]);
+
+  // Redirect to login if user is not authenticated and trying to access protected routes
+  useEffect(() => {
+    if (!isLoading && !user) {
+      const protectedRoutes = ['/dashboard', '/admin', '/grades', '/courses', '/leaderboard'];
+      if (protectedRoutes.includes(location.pathname)) {
+        navigate('/login', { replace: true });
+      }
+    }
+  }, [user, isLoading, location.pathname, navigate]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });

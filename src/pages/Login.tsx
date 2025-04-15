@@ -8,29 +8,48 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { GraduationCap, AtSign, Lock, Eye, EyeOff, User, Building } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { signIn } = useAuth();
   
-  const handleLogin = (e: React.FormEvent, role: 'student' | 'professor') => {
+  const handleLogin = async (e: React.FormEvent, role: 'student' | 'professor') => {
     e.preventDefault();
-    // In a real app, this would authenticate with a backend
-    if (email && password) {
-      toast({
-        title: "Success",
-        description: `Logged in as ${role}`
-      });
-      navigate(role === 'professor' ? '/admin' : '/dashboard');
-    } else {
+    
+    if (!email || !password) {
       toast({
         title: "Error",
         description: "Please fill in all fields",
         variant: "destructive"
       });
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      await signIn(email, password);
+      
+      toast({
+        title: "Success",
+        description: `Logged in as ${role}`
+      });
+      
+      // Navigation will be handled by AuthContext's useEffect that monitors the user state
+    } catch (error) {
+      console.error("Login error:", error);
+      toast({
+        title: "Login Failed",
+        description: error instanceof Error ? error.message : "An error occurred during login",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -76,6 +95,7 @@ export default function Login() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
+                        disabled={isLoading}
                       />
                     </div>
                   </div>
@@ -85,6 +105,7 @@ export default function Login() {
                       <Button 
                         variant="link" 
                         className="px-0 text-xs text-muted-foreground hover:text-edu-purple"
+                        type="button"
                       >
                         Forgot password?
                       </Button>
@@ -99,6 +120,7 @@ export default function Login() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
+                        disabled={isLoading}
                       />
                       <Button
                         type="button"
@@ -106,6 +128,7 @@ export default function Login() {
                         size="icon"
                         className="absolute right-0 top-0 h-10 w-10 text-muted-foreground hover:text-edu-purple"
                         onClick={() => setShowPassword(!showPassword)}
+                        disabled={isLoading}
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         <span className="sr-only">Toggle password visibility</span>
@@ -119,6 +142,7 @@ export default function Login() {
                       className="h-4 w-4 rounded border-gray-300 text-edu-purple focus:ring-edu-purple"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
+                      disabled={isLoading}
                     />
                     <label htmlFor="remember" className="text-sm text-muted-foreground">
                       Remember me
@@ -126,8 +150,12 @@ export default function Login() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" className="w-full bg-edu-purple hover:bg-edu-purple/90">
-                    Sign In
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-edu-purple hover:bg-edu-purple/90"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Signing In..." : "Sign In"}
                   </Button>
                 </CardFooter>
               </form>
@@ -159,6 +187,7 @@ export default function Login() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
+                        disabled={isLoading}
                       />
                     </div>
                   </div>
@@ -168,6 +197,7 @@ export default function Login() {
                       <Button 
                         variant="link" 
                         className="px-0 text-xs text-muted-foreground hover:text-edu-purple"
+                        type="button"
                       >
                         Reset credentials
                       </Button>
@@ -182,6 +212,7 @@ export default function Login() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
+                        disabled={isLoading}
                       />
                       <Button
                         type="button"
@@ -189,6 +220,7 @@ export default function Login() {
                         size="icon"
                         className="absolute right-0 top-0 h-10 w-10 text-muted-foreground hover:text-edu-purple"
                         onClick={() => setShowPassword(!showPassword)}
+                        disabled={isLoading}
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         <span className="sr-only">Toggle password visibility</span>
@@ -203,6 +235,7 @@ export default function Login() {
                         className="h-4 w-4 rounded border-gray-300 text-edu-purple focus:ring-edu-purple"
                         checked={rememberMe}
                         onChange={(e) => setRememberMe(e.target.checked)}
+                        disabled={isLoading}
                       />
                       <label htmlFor="prof-remember" className="text-sm text-muted-foreground">
                         Remember me
@@ -211,8 +244,12 @@ export default function Login() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" className="w-full bg-edu-purple hover:bg-edu-purple/90">
-                    Secure Login
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-edu-purple hover:bg-edu-purple/90"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Signing In..." : "Secure Login"}
                   </Button>
                 </CardFooter>
               </form>
