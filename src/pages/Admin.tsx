@@ -427,7 +427,12 @@ export default function Admin() {
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button type="submit" onClick={() => toast.success("Student added successfully")}>
+                        <Button type="submit" onClick={() => {
+                          toast({
+                            title: "Success",
+                            description: "Student added successfully"
+                          });
+                        }}>
                           Save Student
                         </Button>
                       </DialogFooter>
@@ -666,7 +671,12 @@ export default function Admin() {
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button type="submit" onClick={() => toast.success("Course added successfully")}>
+                        <Button type="submit" onClick={() => {
+                          toast({
+                            title: "Success",
+                            description: "Course added successfully"
+                          });
+                        }}>
                           Save Course
                         </Button>
                       </DialogFooter>
