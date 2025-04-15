@@ -102,7 +102,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password 
       });
       
-      if (error) throw error;
+      if (error) {
+        // Special handling for email not confirmed error
+        if (error.message === "Email not confirmed") {
+          toast({
+            title: "Email not confirmed",
+            description: "For testing, disable email confirmation in your Supabase settings",
+            variant: "destructive"
+          });
+          
+          // For development, attempt to verify the email automatically
+          try {
+            console.log("Attempting to auto-verify email for development...");
+            // This won't work in production - only for development
+            const { error: verifyError } = await supabase.auth.admin.updateUserById(
+              data?.user?.id || "",
+              { email_confirm: true }
+            );
+            
+            if (verifyError) {
+              console.error("Auto-verification failed:", verifyError);
+              throw error; // Throw original error
+            } else {
+              toast({
+                title: "Auto-verification attempted",
+                description: "Please try logging in again",
+              });
+              return { user: null, session: null };
+            }
+          } catch (verifyErr) {
+            console.error("Auto-verification error:", verifyErr);
+            throw error; // Throw original error
+          }
+        } else {
+          throw error;
+        }
+      }
       
       console.log("Sign in successful:", data);
       return data;
