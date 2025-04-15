@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { GraduationCap, AtSign, Lock, Eye, EyeOff, User, Building } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -20,10 +20,17 @@ export default function Login() {
     e.preventDefault();
     // In a real app, this would authenticate with a backend
     if (email && password) {
-      toast.success(`Logged in as ${role}`);
+      toast({
+        title: "Success",
+        description: `Logged in as ${role}`
+      });
       navigate(role === 'professor' ? '/admin' : '/dashboard');
     } else {
-      toast.error("Please fill in all fields");
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive"
+      });
     }
   };
 
