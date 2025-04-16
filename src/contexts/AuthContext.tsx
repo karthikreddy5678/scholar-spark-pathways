@@ -11,7 +11,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isStudent: boolean;
   isLoading: boolean;
-  signIn: (email: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -92,22 +92,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const signIn = async (email: string) => {
+  const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithOtp({ 
-        email,
-        options: {
-          emailRedirectTo: window.location.origin + '/dashboard'
-        }
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password 
       });
       
       if (error) throw error;
-      toast({
-        title: "Check your email",
-        description: "We've sent you a magic link to sign in.",
-      });
+      
+      if (data.user) {
+        toast({
+          title: "Login successful",
+          description: "You have been logged in successfully",
+        });
+        navigate('/dashboard');
+      }
     } catch (error) {
       console.error("Error signing in:", error);
+      toast({
+        title: "Login failed",
+        description: error instanceof Error ? error.message : "Invalid credentials",
+        variant: "destructive"
+      });
       throw error;
     }
   };

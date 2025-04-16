@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -108,21 +107,13 @@ export default function Login() {
         ? email.includes('@') ? email : `${email}@professor.university.edu`
         : email.includes('@') ? email : `${email}@university.edu`;
       
-      await signIn(emailToUse);
+      await signIn(emailToUse, password);
       
-      toast({
-        title: "Success",
-        description: `Login request sent. Please check your email for the magic link.`
-      });
+      // Navigation is handled in the signIn function in AuthContext
       
-      // Navigation will be handled by AuthContext's useEffect that monitors the user state
     } catch (error) {
       console.error("Login error:", error);
-      toast({
-        title: "Login Failed",
-        description: error instanceof Error ? error.message : "Invalid login credentials. Please check your email and password.",
-        variant: "destructive"
-      });
+      // Toast is shown in AuthContext
     } finally {
       setIsLoading(false);
     }
