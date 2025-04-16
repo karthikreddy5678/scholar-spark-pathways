@@ -1,17 +1,5 @@
-
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Bell, Menu, Moon, Search, Sun, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Sheet,
   SheetContent,
@@ -19,152 +7,60 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet";
-import { toast } from "sonner";
+} from "@/components/ui/sheet"
+import { Button } from "@/components/ui/button";
+import { LogOut, Menu, UserRound } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Link } from "react-router-dom";
+import { NotificationPanel } from "@/components/notifications/NotificationPanel";
 
-interface NavbarProps {
-  userRole?: "student" | "admin" | "teacher";
-  userName?: string;
-  userAvatar?: string;
-}
-
-export function Navbar({ userRole = "student", userName = "John Doe", userAvatar }: NavbarProps) {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [notificationCount] = useState(3);
-  const navigate = useNavigate();
-
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    document.documentElement.classList.toggle("dark");
-  };
-
-  const handleLogout = () => {
-    toast.success("Logged out successfully");
-    navigate("/login");
-  };
+export function Navbar() {
+  const { signOut, user } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-2 md:gap-4">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-[240px] sm:w-[300px]">
-              <SheetHeader>
-                <SheetTitle>
-                  <Link to={userRole === "admin" ? "/admin" : "/dashboard"} className="flex items-center gap-2">
-                    <span className="font-display text-xl font-bold text-edu-purple">ScholarSpark</span>
-                  </Link>
-                </SheetTitle>
-                <SheetDescription>Navigation menu</SheetDescription>
-              </SheetHeader>
-              <nav className="flex flex-col gap-4 py-6">
-                <Link to={userRole === "admin" ? "/admin" : "/dashboard"} className="flex items-center gap-2 text-lg font-medium hover:text-edu-purple">
-                  Dashboard
-                </Link>
-                <Link to="/grades" className="flex items-center gap-2 text-lg font-medium hover:text-edu-purple">
-                  Grades
-                </Link>
-                <Link to="/courses" className="flex items-center gap-2 text-lg font-medium hover:text-edu-purple">
-                  Courses
-                </Link>
-                <Link to="/leaderboard" className="flex items-center gap-2 text-lg font-medium hover:text-edu-purple">
-                  Leaderboard
-                </Link>
-                {userRole === "admin" && (
-                  <Link to="/admin" className="flex items-center gap-2 text-lg font-medium hover:text-edu-purple">
-                    Admin Panel
-                  </Link>
-                )}
-              </nav>
-            </SheetContent>
-          </Sheet>
-
-          <Link to={userRole === "admin" ? "/admin" : "/dashboard"} className="flex items-center gap-2">
-            <span className="hidden font-display text-xl font-bold text-edu-purple md:inline-block">
-              ScholarSpark
-            </span>
-          </Link>
-
-          <nav className="hidden md:flex md:items-center md:gap-6">
-            <Link to={userRole === "admin" ? "/admin" : "/dashboard"} className="text-sm font-medium hover:text-edu-purple">
-              Dashboard
-            </Link>
-            <Link to="/grades" className="text-sm font-medium hover:text-edu-purple">
-              Grades
-            </Link>
-            <Link to="/courses" className="text-sm font-medium hover:text-edu-purple">
-              Courses
-            </Link>
-            <Link to="/leaderboard" className="text-sm font-medium hover:text-edu-purple">
-              Leaderboard
-            </Link>
-            {userRole === "admin" && (
-              <Link to="/admin" className="text-sm font-medium hover:text-edu-purple">
-                Admin Panel
-              </Link>
-            )}
-          </nav>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              {notificationCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-edu-red text-xs text-white">
-                  {notificationCount}
-                </span>
-              )}
+    <div className="bg-background border-b border-border h-16 flex items-center justify-between px-6">
+      <div className="flex items-center">
+        <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <Menu className="h-5 w-5" />
             </Button>
-          </div>
-
-          <Button variant="ghost" size="icon" onClick={toggleTheme}>
-            {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={userAvatar} alt={userName} />
-                  <AvatarFallback className="bg-edu-purple text-white">
-                    {userName.split(" ").map((n) => n[0]).join("")}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{userName}</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
-                  </p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Link to="/profile" className="flex w-full">
-                  Profile
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link to="/settings" className="flex w-full">
-                  Settings
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-64 p-0">
+            <SheetHeader className="pl-6 pt-6">
+              <SheetTitle>Menu</SheetTitle>
+              <SheetDescription>
+                Navigate through the app.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="flex flex-col gap-2 mt-4">
+              <Link to="/dashboard" className="block px-6 py-2 hover:bg-secondary">Dashboard</Link>
+              <Link to="/grades" className="block px-6 py-2 hover:bg-secondary">Grades</Link>
+              <Link to="/courses" className="block px-6 py-2 hover:bg-secondary">Courses</Link>
+              <Link to="/leaderboard" className="block px-6 py-2 hover:bg-secondary">Leaderboard</Link>
+            </div>
+            <Button
+              variant="ghost"
+              className="mt-auto mb-4 mx-4 justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={signOut}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          </SheetContent>
+        </Sheet>
+        <Link to="/dashboard" className="ml-4 text-xl font-bold">
+          EduTrack
+        </Link>
       </div>
-    </header>
+      <div className="flex items-center space-x-4">
+        <NotificationPanel />
+        <Avatar>
+          <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+          <AvatarFallback>{user?.email[0].toUpperCase()}</AvatarFallback>
+        </Avatar>
+      </div>
+    </div>
   );
 }
