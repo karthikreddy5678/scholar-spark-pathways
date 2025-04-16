@@ -3,13 +3,14 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: any;
   session: Session | null;
   isAdmin: boolean;
   isStudent: boolean;
-  isLoading: boolean;  // Added isLoading property
+  isLoading: boolean;
   signIn: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -29,7 +30,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);  // Added isLoading state
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -42,13 +43,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (session) {
         setUser(session.user);
         fetchUserProfile(session.user.id);
+      } else {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     getSession();
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user || null);
 
@@ -57,8 +59,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         setIsAdmin(false);
         setIsStudent(false);
+        setIsLoading(false);
       }
     });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserProfile = async (userId: string) => {
@@ -74,7 +81,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw error;
       }
 
-      setIsAdmin(data?.role === 'admin');
+      setIsAdmin(data?.role === 'admin' || data?.role === 'professor');
       setIsStudent(data?.role === 'student');
     } catch (error) {
       console.error("Error fetching user profile:", error);
@@ -87,25 +94,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string) => {
     try {
-      const { error } = await supabase.auth.signInWithOtp({ email });
+      const { error } = await supabase.auth.signInWithOtp({ 
+        email,
+        options: {
+          emailRedirectTo: window.location.origin + '/dashboard'
+        }
+      });
+      
       if (error) throw error;
-      alert('Check your email for the magic link!');
+      toast({
+        title: "Check your email",
+        description: "We've sent you a magic link to sign in.",
+      });
     } catch (error) {
       console.error("Error signing in:", error);
+      throw error;
     }
   };
 
   const signOut = async () => {
     try {
+      setIsLoading(true);
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);
       setIsAdmin(false);
       setIsStudent(false);
-      // Explicitly navigate to login after signout
-      navigate('/login');
+      navigate('/login', { replace: true });
     } catch (error) {
       console.error("Error signing out:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -114,7 +133,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     session,
     isAdmin,
     isStudent,
-    isLoading,  // Added to the context value
+    isLoading,
     signIn,
     signOut,
   };

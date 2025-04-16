@@ -108,11 +108,11 @@ export default function Login() {
         ? email.includes('@') ? email : `${email}@professor.university.edu`
         : email.includes('@') ? email : `${email}@university.edu`;
       
-      await signIn(emailToUse); // Updated to pass only one argument
+      await signIn(emailToUse);
       
       toast({
         title: "Success",
-        description: `Logged in as ${role}`
+        description: `Login request sent. Please check your email for the magic link.`
       });
       
       // Navigation will be handled by AuthContext's useEffect that monitors the user state

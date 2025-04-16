@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   Bell, Menu, LogOut, User, Settings, 
-  ChevronDown, BookOpen, Home, Graduation, Award
+  ChevronDown, BookOpen, Home, GraduationCap, Award
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -56,7 +57,7 @@ export const Navbar: React.FC<NavbarProps> = ({ userRole, userName }) => {
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link to="/grades">
-                <Graduation className="mr-2 h-4 w-4" />
+                <GraduationCap className="mr-2 h-4 w-4" />
                 <span>My Grades</span>
               </Link>
             </DropdownMenuItem>
