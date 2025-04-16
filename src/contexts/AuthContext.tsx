@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session } from '@supabase/supabase-js';
@@ -8,6 +9,7 @@ interface AuthContextType {
   session: Session | null;
   isAdmin: boolean;
   isStudent: boolean;
+  isLoading: boolean;  // Added isLoading property
   signIn: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -27,10 +29,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);  // Added isLoading state
   const navigate = useNavigate();
 
   useEffect(() => {
     const getSession = async () => {
+      setIsLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
 
       setSession(session);
@@ -39,6 +43,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session.user);
         fetchUserProfile(session.user.id);
       }
+      setIsLoading(false);
     };
 
     getSession();
@@ -58,6 +63,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      setIsLoading(true);
       const { data, error } = await supabase
         .from('profiles')
         .select('role')
@@ -74,6 +80,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("Error fetching user profile:", error);
       setIsAdmin(false);
       setIsStudent(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -106,6 +114,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     session,
     isAdmin,
     isStudent,
+    isLoading,  // Added to the context value
     signIn,
     signOut,
   };

@@ -108,7 +108,7 @@ export default function Login() {
         ? email.includes('@') ? email : `${email}@professor.university.edu`
         : email.includes('@') ? email : `${email}@university.edu`;
       
-      await signIn(emailToUse, password);
+      await signIn(emailToUse); // Updated to pass only one argument
       
       toast({
         title: "Success",
