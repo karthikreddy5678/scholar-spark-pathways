@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
-import { BellRing, PlusCircle, RefreshCw, Pencil, Trash2, Filter, Target, Clock, Users, Globe } from "lucide-react";
+import { BellRing, PlusCircle, RefreshCw, Pencil, Trash2, Filter, Target, Clock, Users, Globe, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";

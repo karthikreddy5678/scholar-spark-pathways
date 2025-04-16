@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -52,7 +51,6 @@ export default function Admin() {
   const { isAdmin, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
   
-  // State for form fields
   const [newStudent, setNewStudent] = useState({
     email: "",
     fullName: "",
@@ -68,7 +66,6 @@ export default function Admin() {
     semester: "fall"
   });
   
-  // State for data
   const [students, setStudents] = useState([]);
   const [courses, setCourses] = useState([]);
   const [gradesData, setGradesData] = useState([]);
@@ -100,10 +97,8 @@ export default function Admin() {
     }
   }, [isAdmin, navigate, activeTab]);
 
-  // Fetch dashboard statistics
   const fetchDashboardStats = async () => {
     try {
-      // Fetch total student count
       const { count: studentCount, error: studentError } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
@@ -111,14 +106,12 @@ export default function Admin() {
       
       if (studentError) throw studentError;
       
-      // Fetch active courses count
       const { count: courseCount, error: courseError } = await supabase
         .from('courses')
         .select('*', { count: 'exact', head: true });
       
       if (courseError) throw courseError;
       
-      // Fetch grades stats
       const { data: gradesData, error: gradesError } = await supabase
         .from('grades')
         .select('locked');
@@ -131,7 +124,6 @@ export default function Admin() {
         ? Math.round((lockedGrades / totalGrades) * 100) 
         : 0;
       
-      // Fetch upcoming events count
       const now = new Date();
       const nextWeek = new Date();
       nextWeek.setDate(now.getDate() + 7);
@@ -161,7 +153,6 @@ export default function Admin() {
     }
   };
 
-  // Fetch all students
   const fetchStudents = async () => {
     setIsLoadingStudents(true);
     try {
@@ -176,8 +167,8 @@ export default function Admin() {
         id: student.id,
         name: `${student.first_name || ''} ${student.last_name || ''}`.trim(),
         email: student.email,
-        course: "N/A", // This would need to come from a course enrollment table
-        status: "active" // This would need to come from a status field
+        course: "N/A",
+        status: "active"
       }));
       
       setStudents(formattedStudents);
@@ -193,7 +184,6 @@ export default function Admin() {
     }
   };
 
-  // Fetch all courses
   const fetchCourses = async () => {
     setIsLoadingCourses(true);
     try {
@@ -229,24 +219,18 @@ export default function Admin() {
     }
   };
 
-  // Fetch grades information
   const fetchGrades = async () => {
     setIsLoadingGrades(true);
     try {
-      // Here we'd join tables to get course info, student counts, etc.
       const { data: coursesData, error: coursesError } = await supabase
         .from('courses')
         .select('id, title');
       
       if (coursesError) throw coursesError;
       
-      // For each course, count students and grades
       const gradesPromises = coursesData.map(async (course) => {
-        // Count all student enrollments for this course
-        // Note: This would typically come from an enrollments table
-        const totalStudents = 30 + Math.floor(Math.random() * 20); // Placeholder logic
+        const totalStudents = 30 + Math.floor(Math.random() * 20);
         
-        // Count submitted/locked grades
         const { data: gradeData, error: gradeError } = await supabase
           .from('grades')
           .select('*')
@@ -263,7 +247,7 @@ export default function Admin() {
           students: totalStudents,
           submitted: submitted,
           pending: totalStudents - submitted,
-          locked: submitted === totalStudents // If all grades are submitted, course is locked
+          locked: submitted === totalStudents
         };
       });
       
@@ -282,19 +266,16 @@ export default function Admin() {
     }
   };
 
-  // Add new student
   const addStudent = async () => {
     setIsAddingStudent(true);
     try {
-      // Split the full name into first and last name
       const nameParts = newStudent.fullName.split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
       
-      // Create user in auth
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: newStudent.email,
-        password: 'password123', // Default password, should be changed by user
+        password: 'password123',
         email_confirm: true,
         user_metadata: { 
           role: 'student',
@@ -304,7 +285,6 @@ export default function Admin() {
       
       if (authError) throw authError;
       
-      // Update profile with additional details
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
@@ -321,7 +301,6 @@ export default function Admin() {
         description: "Student added successfully"
       });
       
-      // Reset form and refresh student list
       setNewStudent({
         email: "",
         fullName: "",
@@ -344,11 +323,9 @@ export default function Admin() {
     }
   };
 
-  // Add new course
   const addCourse = async () => {
     setIsAddingCourse(true);
     try {
-      // Get professor ID from name (this would need to be adapted to your data model)
       const { data: professorData, error: professorError } = await supabase
         .from('profiles')
         .select('id')
@@ -360,7 +337,6 @@ export default function Admin() {
       
       const professorId = professorData?.length > 0 ? professorData[0].id : null;
       
-      // Insert new course
       const { error } = await supabase
         .from('courses')
         .insert({
@@ -378,7 +354,6 @@ export default function Admin() {
         description: "Course added successfully"
       });
       
-      // Reset form and refresh course list
       setNewCourse({
         courseId: "",
         title: "",
@@ -402,10 +377,8 @@ export default function Admin() {
     }
   };
 
-  // Toggle grade lock status
   const toggleLockStatus = async (gradeId) => {
     try {
-      // Get current lock status
       const { data, error: fetchError } = await supabase
         .from('grades')
         .select('locked')
@@ -414,7 +387,6 @@ export default function Admin() {
       
       if (fetchError) throw fetchError;
       
-      // Update lock status for all grades in this course
       const newLockStatus = !data.locked;
       
       const { error: updateError } = await supabase
@@ -429,7 +401,6 @@ export default function Admin() {
         description: `Grades are now ${newLockStatus ? 'locked' : 'unlocked'}`
       });
       
-      // Refresh grades data
       fetchGrades();
       
     } catch (error) {
@@ -442,7 +413,6 @@ export default function Admin() {
     }
   };
 
-  // Delete student
   const deleteStudent = async (studentId) => {
     try {
       const { error } = await supabase.auth.admin.deleteUser(studentId);
@@ -467,7 +437,6 @@ export default function Admin() {
     }
   };
 
-  // Delete course
   const deleteCourse = async (courseId) => {
     try {
       const { error } = await supabase
@@ -495,12 +464,10 @@ export default function Admin() {
     }
   };
 
-  // Recent students for dashboard
   const getRecentStudents = () => {
     return students.slice(0, 5);
   };
 
-  // Schedule for dashboard
   const upcomingEvents = [
     { id: 1, title: "Final Exam: Database Systems", date: "May 20, 2025", type: "Exam" },
     { id: 2, title: "Faculty Meeting", date: "May 15, 2025", type: "Meeting" },
@@ -1126,8 +1093,8 @@ export default function Admin() {
                             placeholder="3" 
                             type="number" 
                             className="col-span-3"
-                            value={newCourse.credits}
-                            onChange={(e) => setNewCourse({...newCourse, credits: e.target.value})}
+                            value={newCourse.credits.toString()}
+                            onChange={(e) => setNewCourse({...newCourse, credits: parseInt(e.target.value) || 0})}
                           />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
@@ -1313,4 +1280,3 @@ export default function Admin() {
     </div>
   );
 }
-

@@ -83,7 +83,7 @@ export default function Reports() {
         .select('grade');
       
       const avgGrade = gradesData && gradesData.length > 0
-        ? gradesData.reduce((acc, curr) => acc + parseFloat(curr.grade), 0) / gradesData.length
+        ? gradesData.reduce((acc, curr) => acc + parseFloat(curr.grade.toString()), 0) / gradesData.length
         : 0;
       
       setReportStats({
