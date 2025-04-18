@@ -1,12 +1,13 @@
-
-import { Notebook, GraduationCap, Award, TrendingUp, Bell, BookOpenCheck } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Notebook, GraduationCap, Award, TrendingUp, Bell } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
 import { AchievementCard } from "@/components/dashboard/AchievementCard";
 import { CourseRecommendationCard } from "@/components/dashboard/CourseRecommendationCard";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
-// Mock data
 const achievements = [
   {
     id: "1",
@@ -134,6 +135,96 @@ const notifications = [
 ];
 
 export default function Dashboard() {
+  const { user } = useAuth();
+  const [dashboardStats, setDashboardStats] = useState({
+    gpa: 0,
+    gpaChange: 0,
+    coursesCount: 0,
+    creditHours: 0,
+    badgesCount: 0,
+    totalBadges: 12,
+    badgesThisTerm: 0,
+    notificationsCount: 0,
+    unreadNotifications: 0
+  });
+
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      if (!user) return;
+
+      try {
+        // Fetch grades for GPA calculation
+        const { data: gradesData } = await supabase
+          .from('grades')
+          .select('grade')
+          .eq('student_id', user.id)
+          .not('locked', 'is', null);
+
+        // Calculate GPA
+        if (gradesData && gradesData.length > 0) {
+          const gpa = gradesData.reduce((acc, curr) => acc + Number(curr.grade), 0) / gradesData.length;
+          setDashboardStats(prev => ({ ...prev, gpa: Number(gpa.toFixed(2)) }));
+        }
+
+        // Fetch enrolled courses
+        const { data: coursesData } = await supabase
+          .from('courses')
+          .select('*');
+
+        if (coursesData) {
+          const totalCredits = coursesData.reduce((acc, curr) => acc + curr.credits, 0);
+          setDashboardStats(prev => ({
+            ...prev,
+            coursesCount: coursesData.length,
+            creditHours: totalCredits
+          }));
+        }
+
+        // Fetch notifications count
+        const { data: notificationsData } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('status', 'active')
+          .gte('start_date', new Date().toISOString())
+          .lte('end_date', new Date().toISOString())
+          .or(`audience.eq.all,audience.eq.${user.user_metadata?.role || 'student'}`);
+
+        if (notificationsData) {
+          setDashboardStats(prev => ({
+            ...prev,
+            notificationsCount: notificationsData.length,
+            unreadNotifications: notificationsData.filter(n => !n.read_at).length
+          }));
+        }
+
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+      }
+    };
+
+    fetchDashboardStats();
+
+    // Set up real-time subscription for notifications
+    const notificationsChannel = supabase
+      .channel('dashboard_notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications'
+        },
+        () => {
+          fetchDashboardStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(notificationsChannel);
+    };
+  }, [user]);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar userRole="student" userName="Alex Johnson" />
@@ -149,12 +240,12 @@ export default function Dashboard() {
           >
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-3xl font-bold text-edu-purple">3.85</p>
+                <p className="text-3xl font-bold text-edu-purple">{dashboardStats.gpa}</p>
                 <p className="text-xs text-muted-foreground">out of 4.0</p>
               </div>
               <div className="flex items-center text-green-500">
                 <TrendingUp className="mr-1 h-4 w-4" />
-                <span className="text-sm">+0.2</span>
+                <span className="text-sm">+{dashboardStats.gpaChange}</span>
               </div>
             </div>
           </DashboardCard>
@@ -166,8 +257,8 @@ export default function Dashboard() {
           >
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-3xl font-bold text-edu-purple">5</p>
-                <p className="text-xs text-muted-foreground">15 credit hours</p>
+                <p className="text-3xl font-bold text-edu-purple">{dashboardStats.coursesCount}</p>
+                <p className="text-xs text-muted-foreground">{dashboardStats.creditHours} credit hours</p>
               </div>
               <div className="flex items-center">
                 <span className="rounded-full bg-edu-purple/10 px-2 py-1 text-xs font-medium text-edu-purple">
@@ -184,14 +275,14 @@ export default function Dashboard() {
           >
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-3xl font-bold text-edu-purple">5</p>
+                <p className="text-3xl font-bold text-edu-purple">{dashboardStats.badgesCount}</p>
                 <p className="text-xs text-muted-foreground">
-                  of 12 possible
+                  of {dashboardStats.totalBadges} possible
                 </p>
               </div>
               <div className="flex items-center text-green-500">
                 <TrendingUp className="mr-1 h-4 w-4" />
-                <span className="text-sm">+2 this term</span>
+                <span className="text-sm">+{dashboardStats.badgesThisTerm} this term</span>
               </div>
             </div>
           </DashboardCard>
@@ -203,15 +294,17 @@ export default function Dashboard() {
           >
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-3xl font-bold text-edu-purple">3</p>
+                <p className="text-3xl font-bold text-edu-purple">{dashboardStats.notificationsCount}</p>
                 <p className="text-xs text-muted-foreground">
-                  2 unread messages
+                  {dashboardStats.unreadNotifications} unread messages
                 </p>
               </div>
               <div>
-                <span className="rounded-full bg-red-500/10 px-2 py-1 text-xs font-medium text-red-500">
-                  New
-                </span>
+                {dashboardStats.unreadNotifications > 0 && (
+                  <span className="rounded-full bg-red-500/10 px-2 py-1 text-xs font-medium text-red-500">
+                    New
+                  </span>
+                )}
               </div>
             </div>
           </DashboardCard>
