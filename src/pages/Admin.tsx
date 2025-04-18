@@ -382,7 +382,7 @@ export default function Admin() {
       const { data, error: fetchError } = await supabase
         .from('grades')
         .select('locked')
-        .eq('course_id', gradeId)
+        .eq('course_id', gradeId.toString())
         .single();
       
       if (fetchError) throw fetchError;
@@ -392,7 +392,7 @@ export default function Admin() {
       const { error: updateError } = await supabase
         .from('grades')
         .update({ locked: newLockStatus })
-        .eq('course_id', gradeId);
+        .eq('course_id', gradeId.toString());
       
       if (updateError) throw updateError;
       
