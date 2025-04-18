@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Notebook, GraduationCap, Award, TrendingUp, Bell } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
@@ -151,53 +152,58 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
 
-    try {
-      // Fetch grades for GPA calculation
-      const { data: gradesData } = await supabase
-        .from('grades')
-        .select('grade')
-        .eq('student_id', user.id)
-        .not('locked', 'is', null);
+    const fetchDashboardData = async () => {
+      try {
+        // Fetch grades for GPA calculation
+        const { data: gradesData } = await supabase
+          .from('grades')
+          .select('grade')
+          .eq('student_id', user.id)
+          .not('locked', 'is', null);
 
-      // Calculate GPA
-      if (gradesData && gradesData.length > 0) {
-        const gpa = gradesData.reduce((acc, curr) => acc + Number(curr.grade), 0) / gradesData.length;
-        setDashboardStats(prev => ({ ...prev, gpa: Number(gpa.toFixed(2)) }));
+        // Calculate GPA
+        if (gradesData && gradesData.length > 0) {
+          const gpa = gradesData.reduce((acc, curr) => acc + Number(curr.grade), 0) / gradesData.length;
+          setDashboardStats(prev => ({ ...prev, gpa: Number(gpa.toFixed(2)) }));
+        }
+
+        // Fetch enrolled courses
+        const { data: coursesData } = await supabase
+          .from('courses')
+          .select('*');
+
+        if (coursesData) {
+          const totalCredits = coursesData.reduce((acc, curr) => acc + curr.credits, 0);
+          setDashboardStats(prev => ({
+            ...prev,
+            coursesCount: coursesData.length,
+            creditHours: totalCredits
+          }));
+        }
+
+        // Fetch notifications count
+        const { data: notificationsData } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('status', 'active')
+          .gte('start_date', new Date().toISOString())
+          .lte('end_date', new Date().toISOString())
+          .or(`audience.eq.all,audience.eq.${user.user_metadata?.role || 'student'}`);
+
+        if (notificationsData) {
+          setDashboardStats(prev => ({
+            ...prev,
+            notificationsCount: notificationsData.length,
+            // Fix: notifications schema doesn't have read_at property, using status instead as a workaround
+            unreadNotifications: notificationsData.filter(n => n.status === 'active').length
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
       }
+    };
 
-      // Fetch enrolled courses
-      const { data: coursesData } = await supabase
-        .from('courses')
-        .select('*');
-
-      if (coursesData) {
-        const totalCredits = coursesData.reduce((acc, curr) => acc + curr.credits, 0);
-        setDashboardStats(prev => ({
-          ...prev,
-          coursesCount: coursesData.length,
-          creditHours: totalCredits
-        }));
-      }
-
-      // Fetch notifications count
-      const { data: notificationsData } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('status', 'active')
-        .gte('start_date', new Date().toISOString())
-        .lte('end_date', new Date().toISOString())
-        .or(`audience.eq.all,audience.eq.${user.user_metadata?.role || 'student'}`);
-
-      if (notificationsData) {
-        setDashboardStats(prev => ({
-          ...prev,
-          notificationsCount: notificationsData.length,
-          unreadNotifications: notificationsData.filter(n => !n.read_at).length
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
-    }
+    fetchDashboardData();
   }, [user]);
 
   return (
