@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,17 +27,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+      async (event, currentSession) => {
         console.log("Auth state changed:", event, currentSession?.user?.email);
+        
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          setUser(null);
+          setIsAdmin(false);
+          setIsLoading(false);
+          navigate('/login', { replace: true });
+          return;
+        }
+        
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         setIsLoading(false);
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       console.log("Initial session check:", currentSession?.user?.email);
       setSession(currentSession);
@@ -47,15 +54,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (user) {
-      // Check user_metadata first for role
       const userMetadataRole = user.user_metadata?.role;
       console.log("User metadata role:", userMetadataRole);
       
-      // Get user profile data with role
       const fetchUserProfile = async () => {
         const { data, error } = await supabase
           .from('profiles')
@@ -70,14 +75,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         console.log("User profile from database:", data);
         
-        // Prioritize role from user_metadata if available
         const roleToUse = userMetadataRole || data?.role;
         console.log("Using role:", roleToUse);
         
         const isUserAdmin = roleToUse === 'professor';
         setIsAdmin(isUserAdmin);
         
-        // Handle redirection after login based on role
         if (location.pathname === '/login') {
           const redirectTo = isUserAdmin ? '/admin' : '/dashboard';
           console.log(`Redirecting to ${redirectTo} based on role:`, roleToUse);
@@ -85,14 +88,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       };
       
-      // Use setTimeout to prevent potential deadlock with onAuthStateChange
       setTimeout(() => {
         fetchUserProfile();
       }, 0);
     }
   }, [user, navigate, location.pathname]);
 
-  // Redirect to login if user is not authenticated and trying to access protected routes
   useEffect(() => {
     if (!isLoading && !user) {
       const protectedRoutes = ['/dashboard', '/admin', '/grades', '/courses', '/leaderboard'];
@@ -112,7 +113,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       
       if (error) {
-        // Special handling for email not confirmed error
         if (error.message === "Email not confirmed") {
           toast({
             title: "Email not confirmed",
@@ -120,10 +120,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             variant: "destructive"
           });
           
-          // For development, attempt to verify the email automatically
           try {
             console.log("Attempting to auto-verify email for development...");
-            // This won't work in production - only for development
             const { error: verifyError } = await supabase.auth.admin.updateUserById(
               data?.user?.id || "",
               { email_confirm: true }
@@ -131,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             
             if (verifyError) {
               console.error("Auto-verification failed:", verifyError);
-              throw error; // Throw original error
+              throw error;
             } else {
               toast({
                 title: "Auto-verification attempted",
@@ -141,7 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           } catch (verifyErr) {
             console.error("Auto-verification error:", verifyErr);
-            throw error; // Throw original error
+            throw error;
           }
         } else {
           throw error;
@@ -161,12 +159,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
+      setSession(null);
+      setUser(null);
+      setIsAdmin(false);
+      
       toast({
         title: "Signed out",
         description: "You have been successfully signed out"
       });
       
-      navigate('/login');
+      navigate('/login', { replace: true });
     } catch (error) {
       console.error("Sign out error:", error);
       toast({

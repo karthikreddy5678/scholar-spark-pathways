@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import { BellRing, PlusCircle, RefreshCw, Pencil, Trash2, Filter, Target, Clock, Users, Globe, Search } from "lucide-react";
@@ -26,6 +25,28 @@ export default function Notifications() {
   
   useEffect(() => {
     fetchNotifications();
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel('notifications_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all changes (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'notifications'
+        },
+        (payload) => {
+          console.log('Real-time notification change:', payload);
+          fetchNotifications(); // Refresh notifications on any change
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
   
   const fetchNotifications = async () => {
@@ -411,4 +432,3 @@ export default function Notifications() {
     </div>
   );
 }
-
