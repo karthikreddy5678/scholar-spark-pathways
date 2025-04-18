@@ -1,93 +1,170 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { 
-  Bell, Menu, LogOut, User, Settings, 
-  ChevronDown, BookOpen, Home, GraduationCap, Award
-} from 'lucide-react';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Bell, Menu, Moon, Search, Sun, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { toast } from "sonner";
 
 interface NavbarProps {
-  userRole: string;
-  userName: string;
+  userRole?: "student" | "admin" | "teacher";
+  userName?: string;
+  userAvatar?: string;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ userRole, userName }) => {
-  const { signOut } = useAuth();
-  
+export function Navbar({ userRole = "student", userName = "John Doe", userAvatar }: NavbarProps) {
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [notificationCount] = useState(3);
+  const navigate = useNavigate();
+
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+    document.documentElement.classList.toggle("dark");
+  };
+
+  const handleLogout = () => {
+    toast.success("Logged out successfully");
+    navigate("/login");
+  };
+
   return (
-    <div className="bg-background border-b border-border h-16 flex items-center justify-between px-6">
-      <div className="flex items-center">
-        <button className="md:hidden mr-4">
-          <Menu className="h-6 w-6" />
-        </button>
-        <Link to="/dashboard" className="flex items-center font-semibold">
-          <Home className="h-5 w-5 mr-2" />
-          ScholarSpark
-        </Link>
-      </div>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center justify-between">
+        <div className="flex items-center gap-2 md:gap-4">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[240px] sm:w-[300px]">
+              <SheetHeader>
+                <SheetTitle>
+                  <Link to={userRole === "admin" ? "/admin" : "/dashboard"} className="flex items-center gap-2">
+                    <span className="font-display text-xl font-bold text-edu-purple">ScholarSpark</span>
+                  </Link>
+                </SheetTitle>
+                <SheetDescription>Navigation menu</SheetDescription>
+              </SheetHeader>
+              <nav className="flex flex-col gap-4 py-6">
+                <Link to={userRole === "admin" ? "/admin" : "/dashboard"} className="flex items-center gap-2 text-lg font-medium hover:text-edu-purple">
+                  Dashboard
+                </Link>
+                <Link to="/grades" className="flex items-center gap-2 text-lg font-medium hover:text-edu-purple">
+                  Grades
+                </Link>
+                <Link to="/courses" className="flex items-center gap-2 text-lg font-medium hover:text-edu-purple">
+                  Courses
+                </Link>
+                <Link to="/leaderboard" className="flex items-center gap-2 text-lg font-medium hover:text-edu-purple">
+                  Leaderboard
+                </Link>
+                {userRole === "admin" && (
+                  <Link to="/admin" className="flex items-center gap-2 text-lg font-medium hover:text-edu-purple">
+                    Admin Panel
+                  </Link>
+                )}
+              </nav>
+            </SheetContent>
+          </Sheet>
 
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="icon">
-          <Bell className="h-5 w-5" />
-        </Button>
+          <Link to={userRole === "admin" ? "/admin" : "/dashboard"} className="flex items-center gap-2">
+            <span className="hidden font-display text-xl font-bold text-edu-purple md:inline-block">
+              ScholarSpark
+            </span>
+          </Link>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center">
-              <User className="mr-2 h-4 w-4" />
-              <span className="text-sm font-medium hidden md:block">{userName}</span>
-              <ChevronDown className="ml-1 h-4 w-4" />
+          <nav className="hidden md:flex md:items-center md:gap-6">
+            <Link to={userRole === "admin" ? "/admin" : "/dashboard"} className="text-sm font-medium hover:text-edu-purple">
+              Dashboard
+            </Link>
+            <Link to="/grades" className="text-sm font-medium hover:text-edu-purple">
+              Grades
+            </Link>
+            <Link to="/courses" className="text-sm font-medium hover:text-edu-purple">
+              Courses
+            </Link>
+            <Link to="/leaderboard" className="text-sm font-medium hover:text-edu-purple">
+              Leaderboard
+            </Link>
+            {userRole === "admin" && (
+              <Link to="/admin" className="text-sm font-medium hover:text-edu-purple">
+                Admin Panel
+              </Link>
+            )}
+          </nav>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="h-5 w-5" />
+              {notificationCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-edu-red text-xs text-white">
+                  {notificationCount}
+                </span>
+              )}
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem asChild>
-              <Link to="/dashboard">
-                <Home className="mr-2 h-4 w-4" />
-                <span>Dashboard</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/grades">
-                <GraduationCap className="mr-2 h-4 w-4" />
-                <span>My Grades</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/courses">
-                <BookOpen className="mr-2 h-4 w-4" />
-                <span>My Courses</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/leaderboard">
-                <Award className="mr-2 h-4 w-4" />
-                <span>Leaderboard</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to="/settings">
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer">
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Log out</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </div>
+
+          <Button variant="ghost" size="icon" onClick={toggleTheme}>
+            {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={userAvatar} alt={userName} />
+                  <AvatarFallback className="bg-edu-purple text-white">
+                    {userName.split(" ").map((n) => n[0]).join("")}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{userName}</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <Link to="/profile" className="flex w-full">
+                  Profile
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link to="/settings" className="flex w-full">
+                  Settings
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
-    </div>
+    </header>
   );
-};
+}

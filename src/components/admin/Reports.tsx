@@ -83,13 +83,7 @@ export default function Reports() {
         .select('grade');
       
       const avgGrade = gradesData && gradesData.length > 0
-        ? gradesData.reduce((acc, curr) => {
-            // Convert to number explicitly to fix type error
-            const gradeValue = typeof curr.grade === 'string' 
-              ? parseFloat(curr.grade) 
-              : Number(curr.grade);
-            return acc + gradeValue;
-          }, 0) / gradesData.length
+        ? gradesData.reduce((acc, curr) => acc + parseFloat(curr.grade.toString()), 0) / gradesData.length
         : 0;
       
       setReportStats({

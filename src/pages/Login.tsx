@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -109,11 +110,19 @@ export default function Login() {
       
       await signIn(emailToUse, password);
       
-      // Navigation is handled in the signIn function in AuthContext
+      toast({
+        title: "Success",
+        description: `Logged in as ${role}`
+      });
       
+      // Navigation will be handled by AuthContext's useEffect that monitors the user state
     } catch (error) {
       console.error("Login error:", error);
-      // Toast is shown in AuthContext
+      toast({
+        title: "Login Failed",
+        description: error instanceof Error ? error.message : "Invalid login credentials. Please check your email and password.",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }

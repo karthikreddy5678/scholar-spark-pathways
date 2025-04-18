@@ -342,7 +342,7 @@ export default function Admin() {
         .insert({
           course_id: newCourse.courseId,
           title: newCourse.title,
-          credits: parseInt(newCourse.credits.toString()),
+          credits: parseInt(newCourse.credits),
           professor_id: professorId,
           semester: newCourse.semester
         });
