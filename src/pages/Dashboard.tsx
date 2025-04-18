@@ -149,80 +149,55 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    const fetchDashboardStats = async () => {
-      if (!user) return;
+    if (!user) return;
 
-      try {
-        // Fetch grades for GPA calculation
-        const { data: gradesData } = await supabase
-          .from('grades')
-          .select('grade')
-          .eq('student_id', user.id)
-          .not('locked', 'is', null);
+    try {
+      // Fetch grades for GPA calculation
+      const { data: gradesData } = await supabase
+        .from('grades')
+        .select('grade')
+        .eq('student_id', user.id)
+        .not('locked', 'is', null);
 
-        // Calculate GPA
-        if (gradesData && gradesData.length > 0) {
-          const gpa = gradesData.reduce((acc, curr) => acc + Number(curr.grade), 0) / gradesData.length;
-          setDashboardStats(prev => ({ ...prev, gpa: Number(gpa.toFixed(2)) }));
-        }
-
-        // Fetch enrolled courses
-        const { data: coursesData } = await supabase
-          .from('courses')
-          .select('*');
-
-        if (coursesData) {
-          const totalCredits = coursesData.reduce((acc, curr) => acc + curr.credits, 0);
-          setDashboardStats(prev => ({
-            ...prev,
-            coursesCount: coursesData.length,
-            creditHours: totalCredits
-          }));
-        }
-
-        // Fetch notifications count
-        const { data: notificationsData } = await supabase
-          .from('notifications')
-          .select('*')
-          .eq('status', 'active')
-          .gte('start_date', new Date().toISOString())
-          .lte('end_date', new Date().toISOString())
-          .or(`audience.eq.all,audience.eq.${user.user_metadata?.role || 'student'}`);
-
-        if (notificationsData) {
-          setDashboardStats(prev => ({
-            ...prev,
-            notificationsCount: notificationsData.length,
-            unreadNotifications: notificationsData.filter(n => !n.read_at).length
-          }));
-        }
-
-      } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
+      // Calculate GPA
+      if (gradesData && gradesData.length > 0) {
+        const gpa = gradesData.reduce((acc, curr) => acc + Number(curr.grade), 0) / gradesData.length;
+        setDashboardStats(prev => ({ ...prev, gpa: Number(gpa.toFixed(2)) }));
       }
-    };
 
-    fetchDashboardStats();
+      // Fetch enrolled courses
+      const { data: coursesData } = await supabase
+        .from('courses')
+        .select('*');
 
-    // Set up real-time subscription for notifications
-    const notificationsChannel = supabase
-      .channel('dashboard_notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notifications'
-        },
-        () => {
-          fetchDashboardStats();
-        }
-      )
-      .subscribe();
+      if (coursesData) {
+        const totalCredits = coursesData.reduce((acc, curr) => acc + curr.credits, 0);
+        setDashboardStats(prev => ({
+          ...prev,
+          coursesCount: coursesData.length,
+          creditHours: totalCredits
+        }));
+      }
 
-    return () => {
-      supabase.removeChannel(notificationsChannel);
-    };
+      // Fetch notifications count
+      const { data: notificationsData } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('status', 'active')
+        .gte('start_date', new Date().toISOString())
+        .lte('end_date', new Date().toISOString())
+        .or(`audience.eq.all,audience.eq.${user.user_metadata?.role || 'student'}`);
+
+      if (notificationsData) {
+        setDashboardStats(prev => ({
+          ...prev,
+          notificationsCount: notificationsData.length,
+          unreadNotifications: notificationsData.filter(n => !n.read_at).length
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    }
   }, [user]);
 
   return (

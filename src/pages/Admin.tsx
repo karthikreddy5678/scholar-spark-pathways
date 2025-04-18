@@ -474,6 +474,14 @@ export default function Admin() {
     { id: 3, title: "AI Workshop for Students", date: "May 18, 2025", type: "Workshop" },
   ];
 
+  const handleNewGradeEntry = () => {
+    setActiveTab("new-grade");
+    toast({
+      title: "Grade Entry Form Opened",
+      description: "You can now enter grades for students"
+    });
+  };
+
   return (
     <div className="flex h-screen bg-background">
       <div className="w-64 bg-sidebar border-r border-border hidden md:block">
@@ -931,7 +939,7 @@ export default function Admin() {
                   <p className="text-muted-foreground">Manage and track student grades</p>
                 </div>
                 <div className="flex space-x-2">
-                  <Button>
+                  <Button onClick={handleNewGradeEntry}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     New Grade Entry
                   </Button>

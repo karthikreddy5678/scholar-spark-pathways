@@ -4,11 +4,64 @@ import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import { Calendar, Clock, Users, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Events() {
   const [selectedDate] = useState<Date>(new Date());
+  const [eventTitle, setEventTitle] = useState("");
+  const [eventType, setEventType] = useState("");
+  const [eventDateTime, setEventDateTime] = useState("");
+  const [isAddingEvent, setIsAddingEvent] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleAddEvent = async () => {
+    if (!eventTitle || !eventType || !eventDateTime) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsAddingEvent(true);
+    try {
+      const { error } = await supabase
+        .from('events')
+        .insert({
+          title: eventTitle,
+          type: eventType,
+          date: new Date(eventDateTime).toISOString(),
+          description: ""
+        });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Event added",
+        description: "Event has been successfully created"
+      });
+      
+      // Reset form and close dialog
+      setEventTitle("");
+      setEventType("");
+      setEventDateTime("");
+      setIsDialogOpen(false);
+      
+    } catch (error) {
+      console.error("Error adding event:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add event",
+        variant: "destructive"
+      });
+    } finally {
+      setIsAddingEvent(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -17,7 +70,7 @@ export default function Events() {
           <h2 className="text-2xl font-bold">Event Management</h2>
           <p className="text-muted-foreground">Organize and schedule academic events</p>
         </div>
-        <Dialog>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Calendar className="mr-2 h-4 w-4" />
@@ -31,11 +84,15 @@ export default function Events() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <label>Event Title</label>
-                <Input placeholder="Enter event title" />
+                <Input 
+                  placeholder="Enter event title" 
+                  value={eventTitle}
+                  onChange={(e) => setEventTitle(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <label>Event Type</label>
-                <Select>
+                <Select value={eventType} onValueChange={setEventType}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
@@ -48,9 +105,22 @@ export default function Events() {
               </div>
               <div className="space-y-2">
                 <label>Date & Time</label>
-                <Input type="datetime-local" />
+                <Input 
+                  type="datetime-local" 
+                  value={eventDateTime}
+                  onChange={(e) => setEventDateTime(e.target.value)}
+                />
               </div>
             </div>
+            <DialogFooter>
+              <Button 
+                type="submit" 
+                onClick={handleAddEvent}
+                disabled={isAddingEvent}
+              >
+                {isAddingEvent ? "Adding..." : "Add Event"}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
