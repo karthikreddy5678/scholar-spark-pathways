@@ -1,7 +1,7 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Bell, Menu, Moon, Sun, X } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Bell, Menu, Moon, Search, Sun, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -20,7 +20,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 interface NavbarProps {
@@ -32,20 +31,16 @@ interface NavbarProps {
 export function Navbar({ userRole = "student", userName = "John Doe", userAvatar }: NavbarProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [notificationCount] = useState(3);
-  const { signOut, user } = useAuth();
+  const navigate = useNavigate();
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
     document.documentElement.classList.toggle("dark");
   };
 
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      toast.success("Logged out successfully");
-    } catch (error) {
-      toast.error("Failed to log out");
-    }
+  const handleLogout = () => {
+    toast.success("Logged out successfully");
+    navigate("/login");
   };
 
   return (
@@ -147,9 +142,9 @@ export function Navbar({ userRole = "student", userName = "John Doe", userAvatar
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user?.user_metadata?.full_name || userName}</p>
+                  <p className="text-sm font-medium leading-none">{userName}</p>
                   <p className="text-xs leading-none text-muted-foreground">
-                    {user?.user_metadata?.role || userRole.charAt(0).toUpperCase() + userRole.slice(1)}
+                    {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
                   </p>
                 </div>
               </DropdownMenuLabel>
