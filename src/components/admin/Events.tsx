@@ -237,7 +237,7 @@ export default function Events() {
       </div>
 
       {isLoading ? (
-        <DashboardCard>
+        <DashboardCard title="Loading">
           <div className="h-[500px] flex items-center justify-center">
             <p className="text-muted-foreground">Loading event calendar...</p>
           </div>

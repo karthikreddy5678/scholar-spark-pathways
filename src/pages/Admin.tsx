@@ -265,6 +265,19 @@ export default function Admin() {
   const addStudent = async () => {
     setIsAddingStudent(true);
     try {
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: newStudent.email,
+        email_confirm: true,
+        user_metadata: {
+          full_name: newStudent.fullName
+        }
+      });
+      
+      if (authError || !authData.user) {
+        throw authError || new Error("Failed to create user");
+      }
+      
+      const userId = authData.user.id;
       const nameParts = newStudent.fullName.split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
@@ -272,6 +285,7 @@ export default function Admin() {
       const { error } = await supabase
         .from('profiles')
         .insert({
+          id: userId,
           email: newStudent.email,
           first_name: firstName,
           last_name: lastName,

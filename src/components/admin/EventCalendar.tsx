@@ -140,6 +140,7 @@ export const EventCalendar = ({ events }: { events: EventType[] }) => {
           components={{
             Day: ({ date: dayDate, ...props }) => (
               <div className="relative">
+                {/* Forward children from the props to render the day number */}
                 {props.children}
                 <CalendarDay 
                   day={dayDate}
