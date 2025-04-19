@@ -5,9 +5,10 @@ import { Medal, Trophy, Award, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const topStudents = [
-  { rank: 1, name: "Emma Johnson", gpa: 4.0, department: "Computer Science", achievements: 5 },
-  { rank: 2, name: "Michael Chen", gpa: 3.95, department: "Data Science", achievements: 4 },
-  { rank: 3, name: "Sarah Williams", gpa: 3.92, department: "Engineering", achievements: 4 },
+  { rank: 1, name: "Karthik", gpa: 4.0, department: "Computer Science", achievements: 5 },
+  { rank: 2, name: "Greeshma", gpa: 3.95, department: "Data Science", achievements: 4 },
+  { rank: 3, name: "Sujan", gpa: 3.92, department: "Engineering", achievements: 4 },
+  { rank: 4, name: "Hema", gpa: 3.89, department: "Business", achievements: 3 },
 ];
 
 export default function Leaderboard() {
@@ -19,7 +20,7 @@ export default function Leaderboard() {
           description="Highest GPA"
           icon={<Trophy className="text-yellow-500" />}
         >
-          <p className="text-2xl font-bold">Emma Johnson</p>
+          <p className="text-2xl font-bold">Karthik</p>
           <p className="text-sm text-muted-foreground">GPA: 4.0</p>
         </DashboardCard>
 
@@ -28,7 +29,7 @@ export default function Leaderboard() {
           description="This semester"
           icon={<Award className="text-purple-500" />}
         >
-          <p className="text-2xl font-bold">Alex Thompson</p>
+          <p className="text-2xl font-bold">Hema</p>
           <p className="text-sm text-green-600">+0.5 GPA</p>
         </DashboardCard>
 
@@ -71,10 +72,11 @@ export default function Leaderboard() {
                       <Trophy className="h-5 w-5 text-yellow-500" />
                     ) : student.rank === 2 ? (
                       <Medal className="h-5 w-5 text-gray-400" />
-                    ) : (
+                    ) : student.rank === 3 ? (
                       <Medal className="h-5 w-5 text-amber-600" />
+                    ) : (
+                      <span className="h-5 w-5 flex items-center justify-center">#{student.rank}</span>
                     )}
-                    #{student.rank}
                   </div>
                 </TableCell>
                 <TableCell>{student.name}</TableCell>

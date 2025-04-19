@@ -23,7 +23,7 @@ import { Trophy, Award, Medal } from "lucide-react";
 const students = [
   {
     id: "1",
-    name: "Emma Wilson",
+    name: "Karthik",
     rank: 1,
     department: "Computer Science",
     course: "Computer Science",
@@ -34,7 +34,7 @@ const students = [
   },
   {
     id: "2",
-    name: "Jason Rodriguez",
+    name: "Greeshma",
     rank: 2,
     department: "Computer Science",
     course: "Software Engineering",
@@ -45,7 +45,7 @@ const students = [
   },
   {
     id: "3",
-    name: "Sophia Chen",
+    name: "Sujan",
     rank: 3,
     department: "Engineering",
     course: "Electrical Engineering",
@@ -56,7 +56,7 @@ const students = [
   },
   {
     id: "4",
-    name: "Michael Johnson",
+    name: "Hema",
     rank: 4,
     department: "Business",
     course: "Business Administration",
