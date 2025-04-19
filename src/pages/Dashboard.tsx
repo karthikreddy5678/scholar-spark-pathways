@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Notebook, GraduationCap, Award, TrendingUp, Bell } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
@@ -6,6 +5,7 @@ import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
 import { AchievementCard } from "@/components/dashboard/AchievementCard";
 import { CourseRecommendationCard } from "@/components/dashboard/CourseRecommendationCard";
+import { StudyAssistant } from "@/components/dashboard/StudyAssistant";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -146,13 +146,14 @@ export default function Dashboard() {
     totalBadges: 12,
     badgesThisTerm: 0,
     notificationsCount: 0,
-    unreadNotifications: 0
+    unreadNotifications: 0,
+    weakSubjects: ["Mathematics", "Physics"]
   });
 
   useEffect(() => {
     if (!user) return;
 
-    const fetchDashboardData = async () => {
+    const fetchData = async () => {
       try {
         // Fetch grades for GPA calculation
         const { data: gradesData } = await supabase
@@ -194,8 +195,7 @@ export default function Dashboard() {
           setDashboardStats(prev => ({
             ...prev,
             notificationsCount: notificationsData.length,
-            // Fix: notifications schema doesn't have read_at property, using status instead as a workaround
-            unreadNotifications: notificationsData.filter(n => n.status === 'active').length
+            unreadNotifications: notificationsData.filter(n => !n.read_at).length
           }));
         }
       } catch (error) {
@@ -203,12 +203,12 @@ export default function Dashboard() {
       }
     };
 
-    fetchDashboardData();
+    fetchData();
   }, [user]);
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar userRole="student" userName="Alex Johnson" />
+      <Navbar userRole="student" userName={user?.user_metadata?.full_name || "Student"} />
       
       <main className="container py-6">
         <h1 className="mb-6 font-display text-3xl font-bold">Student Dashboard</h1>
@@ -305,6 +305,11 @@ export default function Dashboard() {
           </div>
           
           <div className="space-y-6">
+            <StudyAssistant 
+              studentName={user?.user_metadata?.full_name?.split(' ')[0] || "Student"}
+              currentGPA={dashboardStats.gpa}
+              weakSubjects={dashboardStats.weakSubjects}
+            />
             <DashboardCard 
               title="Upcoming Events" 
               description="Important dates to remember"
