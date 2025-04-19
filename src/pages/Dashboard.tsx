@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Notebook, GraduationCap, Award, TrendingUp, Bell } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
@@ -8,6 +7,7 @@ import { AchievementCard } from "@/components/dashboard/AchievementCard";
 import { CourseRecommendationCard } from "@/components/dashboard/CourseRecommendationCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { StudyTipsAssistant } from "@/components/dashboard/StudyTipsAssistant";
 
 const achievements = [
   {
@@ -305,6 +305,7 @@ export default function Dashboard() {
           </div>
           
           <div className="space-y-6">
+            <StudyTipsAssistant />
             <DashboardCard 
               title="Upcoming Events" 
               description="Important dates to remember"

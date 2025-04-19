@@ -27,15 +27,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   useEffect(() => {
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
         console.log("Auth state changed:", event, currentSession?.user?.email);
         
-        if (event === 'SIGNED_OUT') {
+        if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+          // Clear all auth state
           setSession(null);
           setUser(null);
           setIsAdmin(false);
           setIsLoading(false);
+          // Force clear Supabase session storage
+          localStorage.removeItem('supabase.auth.token');
+          // Redirect to login
           navigate('/login', { replace: true });
           return;
         }
@@ -46,107 +51,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      console.log("Initial session check:", currentSession?.user?.email);
+    // THEN check for existing session
+    const checkSession = async () => {
+      const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error("Session check error:", error);
+        setSession(null);
+        setUser(null);
+        setIsLoading(false);
+        navigate('/login', { replace: true });
+        return;
+      }
+      
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       setIsLoading(false);
-    });
+    };
 
+    checkSession();
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  // Enhanced role validation
   useEffect(() => {
     if (user) {
-      const userMetadataRole = user.user_metadata?.role;
-      console.log("User metadata role:", userMetadataRole);
-      
-      const fetchUserProfile = async () => {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-        
-        if (error) {
-          console.error("Error fetching user profile:", error);
-          return;
-        }
-        
-        console.log("User profile from database:", data);
-        
-        const roleToUse = userMetadataRole || data?.role;
-        console.log("Using role:", roleToUse);
-        
-        const isUserAdmin = roleToUse === 'professor';
-        setIsAdmin(isUserAdmin);
-        
-        if (location.pathname === '/login') {
-          const redirectTo = isUserAdmin ? '/admin' : '/dashboard';
-          console.log(`Redirecting to ${redirectTo} based on role:`, roleToUse);
-          navigate(redirectTo, { replace: true });
+      const validateUserRole = async () => {
+        try {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+          
+          if (error) throw error;
+          
+          const roleToUse = user.user_metadata?.role || profile?.role;
+          const isUserAdmin = roleToUse === 'professor';
+          setIsAdmin(isUserAdmin);
+          
+          if (location.pathname === '/login') {
+            navigate(isUserAdmin ? '/admin' : '/dashboard', { replace: true });
+          }
+        } catch (error) {
+          console.error("Role validation error:", error);
+          // On role validation error, force logout
+          signOut();
         }
       };
       
-      setTimeout(() => {
-        fetchUserProfile();
-      }, 0);
+      setTimeout(() => validateUserRole(), 0);
     }
   }, [user, navigate, location.pathname]);
 
+  // Protect routes
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isLoading) {
       const protectedRoutes = ['/dashboard', '/admin', '/grades', '/courses', '/leaderboard'];
-      if (protectedRoutes.includes(location.pathname)) {
-        console.log("Redirecting to login from protected route:", location.pathname);
+      const needsAuth = protectedRoutes.includes(location.pathname);
+      
+      if (needsAuth && !session) {
+        console.log("No valid session, redirecting to login");
         navigate('/login', { replace: true });
       }
     }
-  }, [user, isLoading, location.pathname, navigate]);
+  }, [session, isLoading, location.pathname, navigate]);
 
   const signIn = async (email: string, password: string) => {
-    console.log("Attempting signin with:", email);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ 
-        email, 
-        password 
-      });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       
-      if (error) {
-        if (error.message === "Email not confirmed") {
-          toast({
-            title: "Email not confirmed",
-            description: "For testing, disable email confirmation in your Supabase settings",
-            variant: "destructive"
-          });
-          
-          try {
-            console.log("Attempting to auto-verify email for development...");
-            const { error: verifyError } = await supabase.auth.admin.updateUserById(
-              data?.user?.id || "",
-              { email_confirm: true }
-            );
-            
-            if (verifyError) {
-              console.error("Auto-verification failed:", verifyError);
-              throw error;
-            } else {
-              toast({
-                title: "Auto-verification attempted",
-                description: "Please try logging in again",
-              });
-              return { user: null, session: null };
-            }
-          } catch (verifyErr) {
-            console.error("Auto-verification error:", verifyErr);
-            throw error;
-          }
-        } else {
-          throw error;
-        }
-      }
-      
-      console.log("Sign in successful:", data);
+      if (error) throw error;
       return data;
     } catch (error) {
       console.error("Sign in error:", error);
@@ -159,9 +133,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
+      // Clear all auth state
       setSession(null);
       setUser(null);
       setIsAdmin(false);
+      
+      // Force clear local storage
+      localStorage.removeItem('supabase.auth.token');
       
       toast({
         title: "Signed out",
