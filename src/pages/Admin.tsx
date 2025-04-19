@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import {
   Table,
@@ -34,15 +35,20 @@ interface Student {
   last_name: string;
 }
 
+// Update Course interface to match the database structure
 interface Course {
   id: number;
-  name: string;
+  title: string; // This will be used instead of 'name'
   credits: number;
+  course_id: string;
+  semester: string;
+  professor_id?: string;
+  created_at: string;
 }
 
 interface Grade {
   id?: number;
-  course_id: string;
+  course_id: number | string;
   student_id: string;
   grade: number;
   term: string;
@@ -69,7 +75,9 @@ export default function Admin() {
     password: ''
   });
   const [newCourse, setNewCourse] = useState({
-    name: '',
+    title: '', // Renamed from 'name' to match the database
+    course_id: '', // Added to match the database
+    semester: 'Fall 2024', // Added to match the database
     credits: 3
   });
   const [newGrade, setNewGrade] = useState<Omit<Grade, 'id' | 'locked'>>({
@@ -113,6 +121,7 @@ export default function Admin() {
         .select('*');
 
       if (error) throw error;
+      // Map the database fields to our interface
       setCourses(data || []);
     } catch (error) {
       console.error("Error fetching courses:", error);
@@ -138,13 +147,30 @@ export default function Admin() {
           ),
           course:course_id (
             id,
-            name,
-            credits
+            title,
+            credits,
+            course_id,
+            semester
           )
         `);
 
       if (error) throw error;
-      setGrades(data || []);
+      
+      // Transform data to match our Grade interface
+      const transformedGrades = data?.map(grade => ({
+        id: grade.id,
+        course_id: grade.course_id,
+        student_id: grade.student_id,
+        grade: grade.grade,
+        term: 'Fall', // Default value since it's missing from the database
+        year: new Date().getFullYear(), // Default value since it's missing from the database
+        notes: '', // Default value since it's missing from the database
+        locked: grade.locked || false,
+        student: grade.student,
+        course: grade.course
+      })) || [];
+      
+      setGrades(transformedGrades);
     } catch (error) {
       console.error("Error fetching grades:", error);
       toast({
@@ -214,7 +240,7 @@ export default function Admin() {
   };
 
   const addCourse = async () => {
-    if (!newCourse.name || !newCourse.credits) {
+    if (!newCourse.title || !newCourse.credits || !newCourse.course_id || !newCourse.semester) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -229,8 +255,10 @@ export default function Admin() {
       const { error } = await supabase
         .from('courses')
         .insert({
-          name: newCourse.name,
-          credits: newCourse.credits
+          title: newCourse.title, // Changed from 'name'
+          credits: newCourse.credits,
+          course_id: newCourse.course_id,
+          semester: newCourse.semester
         });
 
       if (error) throw error;
@@ -241,7 +269,9 @@ export default function Admin() {
       });
 
       setNewCourse({
-        name: '',
+        title: '',
+        course_id: '',
+        semester: 'Fall 2024',
         credits: 3
       });
 
@@ -272,15 +302,21 @@ export default function Admin() {
     try {
       setIsAddingGrade(true);
 
+      // Make sure course_id is a number
+      const courseId = typeof newGrade.course_id === 'string' 
+        ? parseInt(newGrade.course_id) 
+        : newGrade.course_id;
+      
+      if (isNaN(courseId)) {
+        throw new Error("Invalid course ID");
+      }
+
       const { error } = await supabase
         .from('grades')
         .insert({
-          course_id: newGrade.course_id.toString(), // Convert number to string
+          course_id: courseId,
           student_id: newGrade.student_id,
           grade: newGrade.grade,
-          term: newGrade.term,
-          year: newGrade.year,
-          notes: newGrade.notes,
           locked: false
         });
 
@@ -403,13 +439,15 @@ export default function Admin() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
+                  <TableHead>Course ID</TableHead>
                   <TableHead>Credits</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {courses.map((course) => (
                   <TableRow key={course.id}>
-                    <TableCell>{course.name}</TableCell>
+                    <TableCell>{course.title}</TableCell>
+                    <TableCell>{course.course_id}</TableCell>
                     <TableCell>{course.credits}</TableCell>
                   </TableRow>
                 ))}
@@ -431,13 +469,35 @@ export default function Admin() {
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="courseName" className="text-right">
+                    <Label htmlFor="courseTitle" className="text-right">
                       Course Name
                     </Label>
                     <Input
-                      id="courseName"
-                      value={newCourse.name}
-                      onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })}
+                      id="courseTitle"
+                      value={newCourse.title}
+                      onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="courseId" className="text-right">
+                      Course ID
+                    </Label>
+                    <Input
+                      id="courseId"
+                      value={newCourse.course_id}
+                      onChange={(e) => setNewCourse({ ...newCourse, course_id: e.target.value })}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="semester" className="text-right">
+                      Semester
+                    </Label>
+                    <Input
+                      id="semester"
+                      value={newCourse.semester}
+                      onChange={(e) => setNewCourse({ ...newCourse, semester: e.target.value })}
                       className="col-span-3"
                     />
                   </div>
@@ -480,18 +540,14 @@ export default function Admin() {
                 <TableHead>Student</TableHead>
                 <TableHead>Course</TableHead>
                 <TableHead>Grade</TableHead>
-                <TableHead>Term</TableHead>
-                <TableHead>Year</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {grades.map((grade) => (
                 <TableRow key={grade.id}>
                   <TableCell>{grade.student?.first_name} {grade.student?.last_name}</TableCell>
-                  <TableCell>{grade.course?.name}</TableCell>
+                  <TableCell>{grade.course?.title}</TableCell>
                   <TableCell>{grade.grade}</TableCell>
-                  <TableCell>{grade.term}</TableCell>
-                  <TableCell>{grade.year}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -540,7 +596,7 @@ export default function Admin() {
                       <SelectContent>
                         {courses.map((course) => (
                           <SelectItem key={course.id} value={course.id.toString()}>
-                            {course.name}
+                            {course.title}
                           </SelectItem>
                         ))}
                       </SelectContent>

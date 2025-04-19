@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Notebook, GraduationCap, Award, TrendingUp, Bell } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
@@ -192,10 +193,11 @@ export default function Dashboard() {
           .or(`audience.eq.all,audience.eq.${user.user_metadata?.role || 'student'}`);
 
         if (notificationsData) {
+          // Replace read_at with a simple status check since read_at doesn't exist
           setDashboardStats(prev => ({
             ...prev,
             notificationsCount: notificationsData.length,
-            unreadNotifications: notificationsData.filter(n => !n.read_at).length
+            unreadNotifications: notificationsData.filter(n => n.status === "unread").length || 0
           }));
         }
       } catch (error) {
