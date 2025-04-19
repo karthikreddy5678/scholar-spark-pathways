@@ -1,24 +1,17 @@
-import { useState, useEffect } from 'react';
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
+  TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PlusCircle, Edit, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -26,38 +19,76 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { Switch } from "@/components/ui/switch"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-const formSchema = z.object({
-  emailUpdates: z.boolean().default(true),
-})
+interface Student {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+}
+
+interface Course {
+  id: number;
+  name: string;
+  credits: number;
+}
+
+interface Grade {
+  id?: number;
+  course_id: string;
+  student_id: string;
+  grade: number;
+  term: string;
+  year: number;
+  notes: string;
+  locked: boolean;
+  student?: Student;
+  course?: Course;
+}
 
 export default function Admin() {
-  const [students, setStudents] = useState([]);
-  const [email, setEmail] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [grades, setGrades] = useState<Grade[]>([]);
+  const [isAddingStudentOpen, setIsAddingStudentOpen] = useState(false);
+  const [isAddingCourseOpen, setIsAddingCourseOpen] = useState(false);
+  const [isAddingGradeOpen, setIsAddingGradeOpen] = useState(false);
+  const [isAddingStudent, setIsAddingStudent] = useState(false);
+  const [isAddingCourse, setIsAddingCourse] = useState(false);
+  const [isAddingGrade, setIsAddingGrade] = useState(false);
+  const [newStudent, setNewStudent] = useState({
+    fullName: '',
+    email: '',
+    password: ''
+  });
+  const [newCourse, setNewCourse] = useState({
+    name: '',
+    credits: 3
+  });
+  const [newGrade, setNewGrade] = useState<Omit<Grade, 'id' | 'locked'>>({
+    course_id: '',
+    student_id: '',
+    grade: 0,
+    term: 'Fall',
+    year: new Date().getFullYear(),
+    notes: ''
+  });
 
   useEffect(() => {
     fetchStudents();
+    fetchCourses();
+    fetchGrades();
   }, []);
 
   const fetchStudents = async () => {
     try {
-      setIsLoading(true);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -66,265 +97,521 @@ export default function Admin() {
       if (error) throw error;
       setStudents(data || []);
     } catch (error) {
-      console.error('Error fetching students:', error);
+      console.error("Error fetching students:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to fetch students",
+        description: "Failed to fetch students",
         variant: "destructive"
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const handleAddStudent = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const fetchCourses = async () => {
     try {
-      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('courses')
+        .select('*');
 
-      // First, create the auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: email,
-        password: generateTemporaryPassword(),
-        options: {
-          data: {
-            full_name: `${firstName} ${lastName}`,
-            role: 'student'
-          }
-        }
+      if (error) throw error;
+      setCourses(data || []);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch courses",
+        variant: "destructive"
       });
+    }
+  };
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Failed to create user");
+  const fetchGrades = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('grades')
+        .select(`
+          *,
+          student:student_id (
+            id,
+            email,
+            first_name,
+            last_name
+          ),
+          course:course_id (
+            id,
+            name,
+            credits
+          )
+        `);
 
-      // Now create the profile with the auth user's ID
-      const { error: profileError } = await supabase
+      if (error) throw error;
+      setGrades(data || []);
+    } catch (error) {
+      console.error("Error fetching grades:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch grades",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const addStudent = async () => {
+    if (!newStudent.fullName || !newStudent.email) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsAddingStudent(true);
+
+      // Split the full name into first and last name
+      const nameParts = newStudent.fullName.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      // Generate a UUID for the new profile
+      const newId = crypto.randomUUID();
+
+      const { error } = await supabase
         .from('profiles')
         .insert({
-          id: authData.user.id,
-          email,
+          id: newId,
+          email: newStudent.email,
           first_name: firstName,
           last_name: lastName,
           role: 'student'
         });
 
-      if (profileError) throw profileError;
+      if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Student account created successfully"
+        description: "Student added successfully"
       });
 
-      // Reset form
-      setEmail('');
-      setFirstName('');
-      setLastName('');
-      
-      // Refresh student list
-      await fetchStudents();
+      setNewStudent({
+        fullName: '',
+        email: '',
+        password: ''
+      });
+
+      setIsAddingStudentOpen(false);
+      fetchStudents();
     } catch (error) {
-      console.error('Error adding student:', error);
+      console.error("Error adding student:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create student account",
+        description: "Failed to add student. " + (error as Error).message,
         variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      setIsAddingStudent(false);
     }
   };
 
-  const handleDeleteStudent = async (studentId: string) => {
+  const addCourse = async () => {
+    if (!newCourse.name || !newCourse.credits) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
-      setIsLoading(true);
-      const { error } = await supabase.auth.admin.deleteUser(studentId);
+      setIsAddingCourse(true);
+
+      const { error } = await supabase
+        .from('courses')
+        .insert({
+          name: newCourse.name,
+          credits: newCourse.credits
+        });
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Student account deleted successfully"
+        description: "Course added successfully"
       });
 
-      // Refresh student list
-      await fetchStudents();
+      setNewCourse({
+        name: '',
+        credits: 3
+      });
+
+      setIsAddingCourseOpen(false);
+      fetchCourses();
     } catch (error) {
-      console.error('Error deleting student:', error);
+      console.error("Error adding course:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete student account",
+        description: "Failed to add course. " + (error as Error).message,
         variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      setIsAddingCourse(false);
     }
   };
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      emailUpdates: true,
-    },
-  })
+  const addGrade = async () => {
+    if (!newGrade.course_id || !newGrade.student_id || !newGrade.grade || !newGrade.term || !newGrade.year) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    toast({
-      title: "You submitted the following values:",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(values, null, 2)}</code>
-        </pre>
-      ),
-    })
-  }
+    try {
+      setIsAddingGrade(true);
+
+      const { error } = await supabase
+        .from('grades')
+        .insert({
+          course_id: newGrade.course_id.toString(), // Convert number to string
+          student_id: newGrade.student_id,
+          grade: newGrade.grade,
+          term: newGrade.term,
+          year: newGrade.year,
+          notes: newGrade.notes,
+          locked: false
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Grade added successfully"
+      });
+
+      setNewGrade({
+        course_id: '',
+        student_id: '',
+        grade: 0,
+        term: 'Fall',
+        year: new Date().getFullYear(),
+        notes: ''
+      });
+
+      setIsAddingGradeOpen(false);
+      fetchGrades();
+    } catch (error) {
+      console.error("Error adding grade:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add grade. " + (error as Error).message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsAddingGrade(false);
+    }
+  };
 
   return (
     <div className="container py-6">
-      <h1 className="mb-6 font-display text-3xl font-bold">Admin Dashboard</h1>
+      <h1 className="mb-6 font-display text-3xl font-bold">Admin Panel</h1>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Add New Student</CardTitle>
-            <CardDescription>Create a new student account</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleAddStudent} className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  type="text"
-                  placeholder="First Name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  placeholder="Last Name"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Adding..." : "Add Student"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
+      <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Manage Students</CardTitle>
-            <CardDescription>View and manage existing student accounts</CardDescription>
+            <CardDescription>Add, edit, or remove student accounts.</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
-              <TableCaption>A list of your registered students.</TableCaption>
-              <TableHead>
+              <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              </TableHead>
+              </TableHeader>
               <TableBody>
-                {students.map((student: any) => (
+                {students.map((student) => (
                   <TableRow key={student.id}>
                     <TableCell>{student.first_name} {student.last_name}</TableCell>
                     <TableCell>{student.email}</TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteStudent(student.id)}
-                        disabled={isLoading}
-                      >
-                        {isLoading ? "Deleting..." : "Delete"}
-                      </Button>
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="mt-4 w-full" variant="outline">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Student
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Add New Student</DialogTitle>
+                  <DialogDescription>
+                    Create a new student account by entering their details below.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="name" className="text-right">
+                      Full Name
+                    </Label>
+                    <Input
+                      id="name"
+                      value={newStudent.fullName}
+                      onChange={(e) => setNewStudent({ ...newStudent, fullName: e.target.value })}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="email" className="text-right">
+                      Email
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={newStudent.email}
+                      onChange={(e) => setNewStudent({ ...newStudent, email: e.target.value })}
+                      className="col-span-3"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button type="button" variant="secondary">Cancel</Button>
+                  </DialogClose>
+                  <Button type="submit" onClick={addStudent} disabled={isAddingStudent}>
+                    {isAddingStudent ? "Adding..." : "Add Student"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Manage Courses</CardTitle>
+            <CardDescription>Add, edit, or remove courses from the catalog.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Credits</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {courses.map((course) => (
+                  <TableRow key={course.id}>
+                    <TableCell>{course.name}</TableCell>
+                    <TableCell>{course.credits}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="mt-4 w-full" variant="outline">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Course
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Add New Course</DialogTitle>
+                  <DialogDescription>
+                    Create a new course by entering the details below.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="courseName" className="text-right">
+                      Course Name
+                    </Label>
+                    <Input
+                      id="courseName"
+                      value={newCourse.name}
+                      onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="credits" className="text-right">
+                      Credits
+                    </Label>
+                    <Input
+                      id="credits"
+                      type="number"
+                      value={newCourse.credits}
+                      onChange={(e) => setNewCourse({ ...newCourse, credits: parseInt(e.target.value) })}
+                      className="col-span-3"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button type="button" variant="secondary">Cancel</Button>
+                  </DialogClose>
+                  <Button type="submit" onClick={addCourse} disabled={isAddingCourse}>
+                    {isAddingCourse ? "Adding..." : "Add Course"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
       </div>
 
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button variant="outline">Open Dialog</Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit profile</DialogTitle>
-            <DialogDescription>
-              Make changes to your profile here. Click save when you're done.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="emailUpdates"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Email updates</FormLabel>
-                      <FormDescription>
-                        Receive email updates about your account.
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <Button type="submit">Submit</Button>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Manage Grades</CardTitle>
+          <CardDescription>Add, edit, or remove grades for students.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Student</TableHead>
+                <TableHead>Course</TableHead>
+                <TableHead>Grade</TableHead>
+                <TableHead>Term</TableHead>
+                <TableHead>Year</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {grades.map((grade) => (
+                <TableRow key={grade.id}>
+                  <TableCell>{grade.student?.first_name} {grade.student?.last_name}</TableCell>
+                  <TableCell>{grade.course?.name}</TableCell>
+                  <TableCell>{grade.grade}</TableCell>
+                  <TableCell>{grade.term}</TableCell>
+                  <TableCell>{grade.year}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="mt-4 w-full" variant="outline">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Grade
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[550px]">
+              <DialogHeader>
+                <DialogTitle>Add New Grade</DialogTitle>
+                <DialogDescription>
+                  Create a new grade entry by entering the details below.
+                </DialogDescription>
+              </DialogHeader>
+              <ScrollArea className="h-[400px] w-full rounded-md border p-4">
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="studentId" className="text-right">
+                      Student
+                    </Label>
+                    <Select onValueChange={(value) => setNewGrade({ ...newGrade, student_id: value })}>
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Select a student" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {students.map((student) => (
+                          <SelectItem key={student.id} value={student.id}>
+                            {student.first_name} {student.last_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="courseId" className="text-right">
+                      Course
+                    </Label>
+                    <Select onValueChange={(value) => setNewGrade({ ...newGrade, course_id: value })}>
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Select a course" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {courses.map((course) => (
+                          <SelectItem key={course.id} value={course.id.toString()}>
+                            {course.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="grade" className="text-right">
+                      Grade
+                    </Label>
+                    <Input
+                      id="grade"
+                      type="number"
+                      value={newGrade.grade}
+                      onChange={(e) => setNewGrade({ ...newGrade, grade: parseFloat(e.target.value) })}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="term" className="text-right">
+                      Term
+                    </Label>
+                    <Select onValueChange={(value) => setNewGrade({ ...newGrade, term: value })}>
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Select a term" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Fall">Fall</SelectItem>
+                        <SelectItem value="Winter">Winter</SelectItem>
+                        <SelectItem value="Spring">Spring</SelectItem>
+                        <SelectItem value="Summer">Summer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="year" className="text-right">
+                      Year
+                    </Label>
+                    <Input
+                      id="year"
+                      type="number"
+                      value={newGrade.year}
+                      onChange={(e) => setNewGrade({ ...newGrade, year: parseInt(e.target.value) })}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="notes" className="text-right">
+                      Notes
+                    </Label>
+                    <Input
+                      id="notes"
+                      type="text"
+                      value={newGrade.notes}
+                      onChange={(e) => setNewGrade({ ...newGrade, notes: e.target.value })}
+                      className="col-span-3"
+                    />
+                  </div>
+                </div>
+              </ScrollArea>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="secondary">Cancel</Button>
+                </DialogClose>
+                <Button type="submit" onClick={addGrade} disabled={isAddingGrade}>
+                  {isAddingGrade ? "Adding..." : "Add Grade"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </CardContent>
+      </Card>
     </div>
   );
-}
-
-// Helper function to generate a temporary password
-function generateTemporaryPassword(): string {
-  return Math.random().toString(36).slice(-8);
-}
-
-const FormDescription = ({ children, className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => {
-  return (
-    <p
-      className="text-sm text-muted-foreground"
-      {...props}
-    >
-      {children}
-    </p>
-  )
 }
