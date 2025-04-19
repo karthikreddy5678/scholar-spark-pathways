@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,17 +15,47 @@ interface AuthContextType {
   } | undefined>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Get theme preference from localStorage or default to 'light'
+const getInitialTheme = (): 'light' | 'dark' => {
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'dark' || savedTheme === 'light') {
+    return savedTheme;
+  }
+  
+  // Check for system preference
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    return 'dark';
+  }
+  
+  return 'light';
+};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>(getInitialTheme);
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Apply theme to document root
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+  
+  const toggleTheme = () => {
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -180,7 +211,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isLoading, signIn, signOut, isAdmin }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      isLoading, 
+      signIn, 
+      signOut, 
+      isAdmin,
+      theme,
+      toggleTheme
+    }}>
       {children}
     </AuthContext.Provider>
   );
