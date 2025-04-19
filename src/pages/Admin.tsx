@@ -8,7 +8,7 @@ import {
   Search, LogOut, Grid, PlusCircle, Pencil, Trash2, Filter,
   Upload, Download, Clock, Lock, AlertCircle, Calendar,
   GanttChartSquare, GraduationCap, CreditCard, FileOutput,
-  UnlockIcon, RefreshCw, Moon, Sun
+  UnlockIcon, RefreshCw
 } from "lucide-react";
 import Leaderboard from "@/components/admin/Leaderboard";
 import Analytics from "@/components/admin/Analytics";
@@ -48,7 +48,7 @@ import { toast } from "@/hooks/use-toast";
 
 export default function Admin() {
   const navigate = useNavigate();
-  const { isAdmin, signOut, theme, toggleTheme } = useAuth();
+  const { isAdmin, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
   
   const [newStudent, setNewStudent] = useState({
@@ -222,33 +222,37 @@ export default function Admin() {
   const fetchGrades = async () => {
     setIsLoadingGrades(true);
     try {
-      const { data: gradesData, error: gradesError } = await supabase
-        .from('grades')
-        .select(`
-          *,
-          student:student_id(id, email, first_name, last_name),
-          course:course_id(id, title, credits, course_id, semester)
-        `);
+      const { data: coursesData, error: coursesError } = await supabase
+        .from('courses')
+        .select('id, title');
       
-      if (gradesError) throw gradesError;
+      if (coursesError) throw coursesError;
       
-      const formattedGrades = gradesData.map(grade => ({
-        id: grade.id,
-        course_id: grade.course_id,
-        student_id: grade.student_id,
-        grade: grade.grade,
-        term: 'Spring',
-        year: 2025,
-        notes: '',
-        locked: grade.locked || false,
-        student: grade.student,
-        course: {
-          ...grade.course,
-          created_at: new Date().toISOString()
-        }
-      }));
+      const gradesPromises = coursesData.map(async (course) => {
+        const totalStudents = 30 + Math.floor(Math.random() * 20);
+        
+        const { data: gradeData, error: gradeError } = await supabase
+          .from('grades')
+          .select('*')
+          .eq('course_id', course.id)
+          .eq('locked', true);
+        
+        if (gradeError) throw gradeError;
+        
+        const submitted = gradeData?.length || 0;
+        
+        return {
+          id: course.id,
+          course: course.title,
+          students: totalStudents,
+          submitted: submitted,
+          pending: totalStudents - submitted,
+          locked: submitted === totalStudents
+        };
+      });
       
-      setGradesData(formattedGrades);
+      const gradesResult = await Promise.all(gradesPromises);
+      setGradesData(gradesResult);
       
     } catch (error) {
       console.error("Error fetching grades:", error);
@@ -265,19 +269,6 @@ export default function Admin() {
   const addStudent = async () => {
     setIsAddingStudent(true);
     try {
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: newStudent.email,
-        email_confirm: true,
-        user_metadata: {
-          full_name: newStudent.fullName
-        }
-      });
-      
-      if (authError || !authData.user) {
-        throw authError || new Error("Failed to create user");
-      }
-      
-      const userId = authData.user.id;
       const nameParts = newStudent.fullName.split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
@@ -285,7 +276,6 @@ export default function Admin() {
       const { error } = await supabase
         .from('profiles')
         .insert({
-          id: userId,
           email: newStudent.email,
           first_name: firstName,
           last_name: lastName,
@@ -340,7 +330,7 @@ export default function Admin() {
         .insert({
           course_id: newCourse.courseId,
           title: newCourse.title,
-          credits: parseInt(newCourse.credits.toString()),
+          credits: parseInt(newCourse.credits),
           professor_id: professorId,
           semester: newCourse.semester
         });
@@ -483,19 +473,11 @@ export default function Admin() {
   return (
     <div className="flex h-screen bg-background">
       <div className="w-64 bg-sidebar border-r border-border hidden md:block">
-        <div className="flex items-center justify-between h-16 border-b border-border px-4">
+        <div className="flex items-center justify-center h-16 border-b border-border">
           <div className="flex items-center">
             <Settings className="h-6 w-6 text-edu-purple mr-2" />
             <h1 className="text-xl font-semibold text-foreground">Admin Panel</h1>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={toggleTheme}
-            className="h-8 w-8"
-          >
-            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
         </div>
         <nav className="mt-6 flex flex-col h-[calc(100%-4rem)]">
           <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase">

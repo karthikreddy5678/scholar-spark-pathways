@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import { Calendar, Clock, Users, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,61 +8,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { EventCalendar } from "./EventCalendar";
-
-type Event = {
-  id: number;
-  title: string;
-  type: string;
-  date: Date;
-  description?: string;
-};
 
 export default function Events() {
-  const [events, setEvents] = useState<Event[]>([]);
+  const [selectedDate] = useState<Date>(new Date());
   const [eventTitle, setEventTitle] = useState("");
   const [eventType, setEventType] = useState("");
-  const [eventDescription, setEventDescription] = useState("");
   const [eventDateTime, setEventDateTime] = useState("");
   const [isAddingEvent, setIsAddingEvent] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetchEvents();
-  }, []);
-
-  const fetchEvents = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .order('date', { ascending: true });
-      
-      if (error) throw error;
-      
-      setEvents(data.map(event => ({
-        ...event,
-        date: new Date(event.date)
-      })));
-    } catch (error) {
-      console.error("Error fetching events:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load events",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleAddEvent = async () => {
     if (!eventTitle || !eventType || !eventDateTime) {
       toast({
         title: "Missing information",
-        description: "Please fill in all required fields",
+        description: "Please fill in all fields",
         variant: "destructive"
       });
       return;
@@ -76,7 +35,7 @@ export default function Events() {
           title: eventTitle,
           type: eventType,
           date: new Date(eventDateTime).toISOString(),
-          description: eventDescription || ""
+          description: ""
         });
       
       if (error) throw error;
@@ -90,11 +49,7 @@ export default function Events() {
       setEventTitle("");
       setEventType("");
       setEventDateTime("");
-      setEventDescription("");
       setIsDialogOpen(false);
-      
-      // Refresh events list
-      fetchEvents();
       
     } catch (error) {
       console.error("Error adding event:", error);
@@ -107,21 +62,6 @@ export default function Events() {
       setIsAddingEvent(false);
     }
   };
-
-  // Count events for today
-  const todayEvents = events.filter(event => 
-    new Date(event.date).toDateString() === new Date().toDateString()
-  );
-  
-  // Count upcoming events for next 7 days
-  const now = new Date();
-  const nextWeek = new Date();
-  nextWeek.setDate(now.getDate() + 7);
-  
-  const upcomingEvents = events.filter(event => {
-    const eventDate = new Date(event.date);
-    return eventDate >= now && eventDate <= nextWeek;
-  });
 
   return (
     <div className="space-y-6">
@@ -160,17 +100,8 @@ export default function Events() {
                     <SelectItem value="exam">Examination</SelectItem>
                     <SelectItem value="seminar">Seminar</SelectItem>
                     <SelectItem value="workshop">Workshop</SelectItem>
-                    <SelectItem value="meeting">Meeting</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-2">
-                <label>Description (Optional)</label>
-                <Input 
-                  placeholder="Enter event description" 
-                  value={eventDescription}
-                  onChange={(e) => setEventDescription(e.target.value)}
-                />
               </div>
               <div className="space-y-2">
                 <label>Date & Time</label>
@@ -200,12 +131,8 @@ export default function Events() {
           description="Scheduled for today"
           icon={<Clock className="text-blue-500" />}
         >
-          <p className="text-2xl font-bold">{todayEvents.length}</p>
-          <p className="text-sm text-muted-foreground">
-            {todayEvents.length > 0 
-              ? `${todayEvents.filter(e => e.type === 'exam').length} exams, ${todayEvents.length - todayEvents.filter(e => e.type === 'exam').length} other`
-              : "No events today"}
-          </p>
+          <p className="text-2xl font-bold">3</p>
+          <p className="text-sm text-muted-foreground">2 exams, 1 seminar</p>
         </DashboardCard>
 
         <DashboardCard
@@ -213,7 +140,7 @@ export default function Events() {
           description="Next 7 days"
           icon={<CalendarDays className="text-purple-500" />}
         >
-          <p className="text-2xl font-bold">{upcomingEvents.length}</p>
+          <p className="text-2xl font-bold">8</p>
           <p className="text-sm text-muted-foreground">View calendar</p>
         </DashboardCard>
 
@@ -231,20 +158,17 @@ export default function Events() {
           description="This semester"
           icon={<Calendar className="text-orange-500" />}
         >
-          <p className="text-2xl font-bold">{events.length}</p>
+          <p className="text-2xl font-bold">42</p>
           <p className="text-sm text-muted-foreground">Since start</p>
         </DashboardCard>
       </div>
 
-      {isLoading ? (
-        <DashboardCard title="Loading">
-          <div className="h-[500px] flex items-center justify-center">
-            <p className="text-muted-foreground">Loading event calendar...</p>
-          </div>
-        </DashboardCard>
-      ) : (
-        <EventCalendar events={events} />
-      )}
+      {/* Calendar will be implemented here */}
+      <DashboardCard title="Event Calendar">
+        <div className="h-[500px] flex items-center justify-center border-2 border-dashed rounded-lg">
+          <p className="text-muted-foreground">Calendar Component Coming Soon</p>
+        </div>
+      </DashboardCard>
     </div>
   );
 }
