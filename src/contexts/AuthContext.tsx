@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,7 +46,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       console.log("Initial session check:", currentSession?.user?.email);
       setSession(currentSession);
@@ -96,12 +94,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, navigate, location.pathname]);
 
-  // Enhanced protection for routes
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !user) {
       const protectedRoutes = ['/dashboard', '/admin', '/grades', '/courses', '/leaderboard'];
-      
-      if (!user && protectedRoutes.some(route => location.pathname.startsWith(route))) {
+      if (protectedRoutes.includes(location.pathname)) {
         console.log("Redirecting to login from protected route:", location.pathname);
         navigate('/login', { replace: true });
       }
@@ -160,21 +156,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      // First clear local session state before calling signOut
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
       setSession(null);
       setUser(null);
       setIsAdmin(false);
-      
-      // Then call Supabase signOut
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
       
       toast({
         title: "Signed out",
         description: "You have been successfully signed out"
       });
       
-      // Force redirect to login page
       navigate('/login', { replace: true });
     } catch (error) {
       console.error("Sign out error:", error);
