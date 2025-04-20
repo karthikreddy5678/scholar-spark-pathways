@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Table,
@@ -118,15 +117,7 @@ export default function Admin() {
         .select('*');
 
       if (error) throw error;
-      // Map the data to match the Course interface
-      const mappedCourses = data.map(course => ({
-        id: course.id,
-        title: course.title,
-        course_id: course.course_id,
-        credits: course.credits,
-        semester: course.semester
-      }));
-      setCourses(mappedCourses);
+      setCourses(data || []);
     } catch (error) {
       console.error("Error fetching courses:", error);
       toast({
@@ -160,7 +151,6 @@ export default function Admin() {
 
       if (error) throw error;
       
-      // Map the data to match the Grade interface
       const mappedGrades = data?.map(grade => ({
         id: grade.id,
         course_id: grade.course_id,
@@ -198,12 +188,10 @@ export default function Admin() {
     try {
       setIsAddingStudent(true);
 
-      // Split the full name into first and last name
       const nameParts = newStudent.fullName.split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
 
-      // Generate a UUID for the new profile
       const newId = crypto.randomUUID();
 
       const { error } = await supabase
@@ -309,7 +297,7 @@ export default function Admin() {
       const { error } = await supabase
         .from('grades')
         .insert({
-          course_id: newGrade.course_id,
+          course_id: Number(newGrade.course_id),
           student_id: newGrade.student_id,
           grade: newGrade.grade,
           term: newGrade.term,
