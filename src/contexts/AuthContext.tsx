@@ -156,12 +156,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
       setSession(null);
       setUser(null);
       setIsAdmin(false);
+      
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Sign out error:", error);
+        throw error;
+      }
       
       toast({
         title: "Signed out",
@@ -176,6 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: "Failed to sign out",
         variant: "destructive"
       });
+      navigate('/login', { replace: true });
     }
   };
 
