@@ -31,11 +31,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Login is the default route */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
-            
-            {/* Protected routes */}
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
@@ -61,6 +57,7 @@ const App = () => (
                 <Admin />
               </ProtectedRoute>
             } />
+            <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
