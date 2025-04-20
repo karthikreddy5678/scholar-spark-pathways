@@ -273,16 +273,31 @@ export default function Admin() {
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
       
-      const { error } = await supabase
-        .from('profiles')
-        .insert({
-          email: newStudent.email,
-          first_name: firstName,
-          last_name: lastName,
+      const { data: userData, error: userError } = await supabase.auth.admin.createUser({
+        email: newStudent.email,
+        password: "password123",
+        email_confirm: true,
+        user_metadata: { 
+          full_name: newStudent.fullName,
           role: 'student'
-        });
+        }
+      });
       
-      if (error) throw error;
+      if (userError) throw userError;
+      
+      if (userData?.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userData.user.id,
+            email: newStudent.email,
+            first_name: firstName,
+            last_name: lastName,
+            role: 'student'
+          });
+        
+        if (profileError) throw profileError;
+      }
       
       toast({
         title: "Success",

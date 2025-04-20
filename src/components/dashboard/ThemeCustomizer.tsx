@@ -23,25 +23,51 @@ export function ThemeCustomizer() {
     const loadPreferences = async () => {
       if (!user) return;
       
-      const { data } = await supabase
-        .from('user_preferences')
-        .select('theme')
-        .eq('id', user.id)
-        .single();
-      
-      if (data) {
-        setCurrentTheme(data.theme);
+      try {
+        const { data, error } = await supabase
+          .from('user_preferences')
+          .select('theme')
+          .eq('id', user.id)
+          .single();
+        
+        if (error && error.code !== 'PGRST116') {
+          console.error("Error loading theme preferences:", error);
+          return;
+        }
+        
+        if (data) {
+          setCurrentTheme(data.theme);
+          applyTheme(data.theme);
+        }
+      } catch (err) {
+        console.error("Error in theme loading:", err);
       }
     };
 
     loadPreferences();
   }, [user]);
 
+  const applyTheme = (themeId: string) => {
+    // Apply theme changes to the document
+    document.documentElement.classList.remove('theme-default', 'theme-ocean', 'theme-forest', 'theme-sunset');
+    document.documentElement.classList.add(`theme-${themeId}`);
+    
+    // You could also change CSS variables here
+    const theme = themes.find(t => t.id === themeId);
+    if (theme) {
+      console.log(`Applied theme: ${theme.name}`);
+    }
+  };
+
   const updateTheme = async (theme: string) => {
     if (!user) return;
     
     setIsLoading(true);
     try {
+      // Apply theme visually first for immediate feedback
+      applyTheme(theme);
+      
+      // Then save to database
       const { error } = await supabase
         .from('user_preferences')
         .upsert({ id: user.id, theme }, { onConflict: 'id' });
@@ -54,6 +80,7 @@ export function ThemeCustomizer() {
         description: "Your dashboard theme has been updated successfully."
       });
     } catch (error) {
+      console.error("Error updating theme:", error);
       toast({
         title: "Error",
         description: "Failed to update theme. Please try again.",

@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -94,16 +95,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, navigate, location.pathname]);
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      const protectedRoutes = ['/dashboard', '/admin', '/grades', '/courses', '/leaderboard'];
-      if (protectedRoutes.includes(location.pathname)) {
-        console.log("Redirecting to login from protected route:", location.pathname);
-        navigate('/login', { replace: true });
-      }
-    }
-  }, [user, isLoading, location.pathname, navigate]);
-
   const signIn = async (email: string, password: string) => {
     console.log("Attempting signin with:", email);
     try {
@@ -113,37 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       
       if (error) {
-        if (error.message === "Email not confirmed") {
-          toast({
-            title: "Email not confirmed",
-            description: "For testing, disable email confirmation in your Supabase settings",
-            variant: "destructive"
-          });
-          
-          try {
-            console.log("Attempting to auto-verify email for development...");
-            const { error: verifyError } = await supabase.auth.admin.updateUserById(
-              data?.user?.id || "",
-              { email_confirm: true }
-            );
-            
-            if (verifyError) {
-              console.error("Auto-verification failed:", verifyError);
-              throw error;
-            } else {
-              toast({
-                title: "Auto-verification attempted",
-                description: "Please try logging in again",
-              });
-              return { user: null, session: null };
-            }
-          } catch (verifyErr) {
-            console.error("Auto-verification error:", verifyErr);
-            throw error;
-          }
-        } else {
-          throw error;
-        }
+        throw error;
       }
       
       console.log("Sign in successful:", data);
@@ -156,8 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      await supabase.auth.signOut();
       
       setSession(null);
       setUser(null);
@@ -168,7 +128,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: "You have been successfully signed out"
       });
       
-      navigate('/login', { replace: true });
+      // Force navigation to login page
+      window.location.href = '/login';
     } catch (error) {
       console.error("Sign out error:", error);
       toast({

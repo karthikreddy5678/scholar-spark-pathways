@@ -1,7 +1,7 @@
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Bell, Menu, Moon, Search, Sun, X } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Bell, Menu, Moon, Sun, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -21,6 +21,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NavbarProps {
   userRole?: "student" | "admin" | "teacher";
@@ -31,16 +32,20 @@ interface NavbarProps {
 export function Navbar({ userRole = "student", userName = "John Doe", userAvatar }: NavbarProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [notificationCount] = useState(3);
-  const navigate = useNavigate();
+  const { signOut, user } = useAuth();
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
     document.documentElement.classList.toggle("dark");
   };
 
-  const handleLogout = () => {
-    toast.success("Logged out successfully");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Failed to log out");
+    }
   };
 
   return (
