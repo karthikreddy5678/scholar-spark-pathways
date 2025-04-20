@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Notebook, GraduationCap, Award, TrendingUp, Bell } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
@@ -192,10 +193,12 @@ export default function Dashboard() {
           .or(`audience.eq.all,audience.eq.${user.user_metadata?.role || 'student'}`);
 
         if (notificationsData) {
+          // Change this line to use a property that actually exists in the notifications table
+          // or filter based on another criterion
           setDashboardStats(prev => ({
             ...prev,
             notificationsCount: notificationsData.length,
-            unreadNotifications: notificationsData.filter(n => !n.read_at).length
+            unreadNotifications: notificationsData.filter(n => n.status === 'active').length
           }));
         }
       } catch (error) {

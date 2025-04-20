@@ -37,13 +37,15 @@ interface Student {
 
 interface Course {
   id: number;
-  name: string;
+  title: string;
+  course_id: string;
   credits: number;
+  semester: string;
 }
 
 interface Grade {
   id?: number;
-  course_id: string;
+  course_id: number;
   student_id: string;
   grade: number;
   term: string;
@@ -70,11 +72,13 @@ export default function Admin() {
     password: ''
   });
   const [newCourse, setNewCourse] = useState({
-    name: '',
+    title: '',
+    course_id: '',
+    semester: 'Fall 2024',
     credits: 3
   });
   const [newGrade, setNewGrade] = useState<Omit<Grade, 'id' | 'locked'>>({
-    course_id: '',
+    course_id: 0,
     student_id: '',
     grade: 0,
     term: 'Fall',
@@ -114,7 +118,15 @@ export default function Admin() {
         .select('*');
 
       if (error) throw error;
-      setCourses(data || []);
+      // Map the data to match the Course interface
+      const mappedCourses = data.map(course => ({
+        id: course.id,
+        title: course.title,
+        course_id: course.course_id,
+        credits: course.credits,
+        semester: course.semester
+      }));
+      setCourses(mappedCourses);
     } catch (error) {
       console.error("Error fetching courses:", error);
       toast({
@@ -139,13 +151,30 @@ export default function Admin() {
           ),
           course:course_id (
             id,
-            name,
-            credits
+            title,
+            course_id,
+            credits,
+            semester
           )
         `);
 
       if (error) throw error;
-      setGrades(data || []);
+      
+      // Map the data to match the Grade interface
+      const mappedGrades = data?.map(grade => ({
+        id: grade.id,
+        course_id: grade.course_id,
+        student_id: grade.student_id,
+        grade: grade.grade,
+        term: grade.term || 'Fall',
+        year: grade.year || new Date().getFullYear(),
+        notes: grade.notes || '',
+        locked: grade.locked || false,
+        student: grade.student,
+        course: grade.course
+      })) || [];
+      
+      setGrades(mappedGrades);
     } catch (error) {
       console.error("Error fetching grades:", error);
       toast({
@@ -215,7 +244,7 @@ export default function Admin() {
   };
 
   const addCourse = async () => {
-    if (!newCourse.name || !newCourse.credits) {
+    if (!newCourse.title || !newCourse.course_id || !newCourse.credits || !newCourse.semester) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -230,8 +259,10 @@ export default function Admin() {
       const { error } = await supabase
         .from('courses')
         .insert({
-          name: newCourse.name,
-          credits: newCourse.credits
+          title: newCourse.title,
+          course_id: newCourse.course_id,
+          credits: newCourse.credits,
+          semester: newCourse.semester
         });
 
       if (error) throw error;
@@ -242,7 +273,9 @@ export default function Admin() {
       });
 
       setNewCourse({
-        name: '',
+        title: '',
+        course_id: '',
+        semester: 'Fall 2024',
         credits: 3
       });
 
@@ -276,7 +309,7 @@ export default function Admin() {
       const { error } = await supabase
         .from('grades')
         .insert({
-          course_id: newGrade.course_id.toString(), // Convert number to string
+          course_id: newGrade.course_id,
           student_id: newGrade.student_id,
           grade: newGrade.grade,
           term: newGrade.term,
@@ -293,7 +326,7 @@ export default function Admin() {
       });
 
       setNewGrade({
-        course_id: '',
+        course_id: 0,
         student_id: '',
         grade: 0,
         term: 'Fall',
@@ -404,13 +437,15 @@ export default function Admin() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
+                  <TableHead>Course ID</TableHead>
                   <TableHead>Credits</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {courses.map((course) => (
                   <TableRow key={course.id}>
-                    <TableCell>{course.name}</TableCell>
+                    <TableCell>{course.title}</TableCell>
+                    <TableCell>{course.course_id}</TableCell>
                     <TableCell>{course.credits}</TableCell>
                   </TableRow>
                 ))}
@@ -432,13 +467,24 @@ export default function Admin() {
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="courseName" className="text-right">
-                      Course Name
+                    <Label htmlFor="courseTitle" className="text-right">
+                      Course Title
                     </Label>
                     <Input
-                      id="courseName"
-                      value={newCourse.name}
-                      onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })}
+                      id="courseTitle"
+                      value={newCourse.title}
+                      onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="courseId" className="text-right">
+                      Course ID
+                    </Label>
+                    <Input
+                      id="courseId"
+                      value={newCourse.course_id}
+                      onChange={(e) => setNewCourse({ ...newCourse, course_id: e.target.value })}
                       className="col-span-3"
                     />
                   </div>
@@ -451,6 +497,17 @@ export default function Admin() {
                       type="number"
                       value={newCourse.credits}
                       onChange={(e) => setNewCourse({ ...newCourse, credits: parseInt(e.target.value) })}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="semester" className="text-right">
+                      Semester
+                    </Label>
+                    <Input
+                      id="semester"
+                      value={newCourse.semester}
+                      onChange={(e) => setNewCourse({ ...newCourse, semester: e.target.value })}
                       className="col-span-3"
                     />
                   </div>
@@ -489,7 +546,7 @@ export default function Admin() {
               {grades.map((grade) => (
                 <TableRow key={grade.id}>
                   <TableCell>{grade.student?.first_name} {grade.student?.last_name}</TableCell>
-                  <TableCell>{grade.course?.name}</TableCell>
+                  <TableCell>{grade.course?.title}</TableCell>
                   <TableCell>{grade.grade}</TableCell>
                   <TableCell>{grade.term}</TableCell>
                   <TableCell>{grade.year}</TableCell>
@@ -534,14 +591,14 @@ export default function Admin() {
                     <Label htmlFor="courseId" className="text-right">
                       Course
                     </Label>
-                    <Select onValueChange={(value) => setNewGrade({ ...newGrade, course_id: value })}>
+                    <Select onValueChange={(value) => setNewGrade({ ...newGrade, course_id: parseInt(value) })}>
                       <SelectTrigger className="col-span-3">
                         <SelectValue placeholder="Select a course" />
                       </SelectTrigger>
                       <SelectContent>
                         {courses.map((course) => (
                           <SelectItem key={course.id} value={course.id.toString()}>
-                            {course.name}
+                            {course.title}
                           </SelectItem>
                         ))}
                       </SelectContent>
