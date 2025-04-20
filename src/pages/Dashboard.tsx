@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Notebook, GraduationCap, Award, TrendingUp, Bell } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
@@ -6,6 +5,9 @@ import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
 import { AchievementCard } from "@/components/dashboard/AchievementCard";
 import { CourseRecommendationCard } from "@/components/dashboard/CourseRecommendationCard";
+import { ThemeCustomizer } from "@/components/dashboard/ThemeCustomizer";
+import { HelpRequestForm } from "@/components/help/HelpRequestForm";
+import { HelpRequestList } from "@/components/help/HelpRequestList";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -213,6 +215,7 @@ export default function Dashboard() {
       <main className="container py-6">
         <h1 className="mb-6 font-display text-3xl font-bold">Student Dashboard</h1>
         
+        {/* Stats cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <DashboardCard 
             title="Current GPA" 
@@ -291,6 +294,7 @@ export default function Dashboard() {
           </DashboardCard>
         </div>
         
+        {/* Performance Chart and Notifications */}
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <DashboardCard 
@@ -362,9 +366,20 @@ export default function Dashboard() {
           </div>
         </div>
         
+        {/* Theme Customization */}
+        <div className="mt-6">
+          <ThemeCustomizer />
+        </div>
+        
+        {/* Help Requests Section */}
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          <HelpRequestForm />
+          <HelpRequestList />
+        </div>
+        
+        {/* Achievements and Course Recommendations */}
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
           <AchievementCard achievements={achievements} />
-          
           <CourseRecommendationCard recommendations={courseRecommendations} className="h-full" />
         </div>
       </main>
