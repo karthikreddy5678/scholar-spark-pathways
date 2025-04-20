@@ -222,36 +222,67 @@ export default function Admin() {
   const fetchGrades = async () => {
     setIsLoadingGrades(true);
     try {
-      const { data: coursesData, error: coursesError } = await supabase
-        .from('courses')
-        .select('id, title');
+      const { data, error } = await supabase
+        .from('grades')
+        .select(`
+          *,
+          student:student_id(id, email, first_name, last_name),
+          course:course_id(id, title, course_id)
+        `);
       
-      if (coursesError) throw coursesError;
+      if (error) throw error;
       
-      const gradesPromises = coursesData.map(async (course) => {
-        const totalStudents = 30 + Math.floor(Math.random() * 20);
+      const formattedGrades = data.map(grade => {
+        const firstName = grade.student?.first_name || '';
+        const lastName = grade.student?.last_name || '';
+        const studentName = `${firstName} ${lastName}`.trim() || 'Unknown Student';
         
-        const { data: gradeData, error: gradeError } = await supabase
-          .from('grades')
-          .select('*')
-          .eq('course_id', course.id)
-          .eq('locked', true);
+        const courseTitle = grade.course?.title || 'Unknown Course';
+        const courseId = grade.course?.course_id || '';
         
-        if (gradeError) throw gradeError;
-        
-        const submitted = gradeData?.length || 0;
+        const gradeDate = new Date(grade.created_at);
+        const semester = gradeDate.getMonth() < 6 ? 'Spring' : 'Fall';
+        const year = gradeDate.getFullYear();
         
         return {
-          id: course.id,
-          course: course.title,
-          students: totalStudents,
-          submitted: submitted,
-          pending: totalStudents - submitted,
-          locked: submitted === totalStudents
+          id: grade.id,
+          course: courseTitle,
+          courseId: courseId,
+          student: studentName,
+          studentId: grade.student_id,
+          grade: grade.grade,
+          semester: semester,
+          year: year, 
+          comments: '',
+          locked: grade.locked || false
         };
       });
       
-      const gradesResult = await Promise.all(gradesPromises);
+      const courseGroups = formattedGrades.reduce((groups, grade) => {
+        const key = grade.courseId;
+        if (!groups[key]) {
+          groups[key] = {
+            id: key,
+            course: grade.course,
+            students: 0,
+            submitted: 0,
+            pending: 0,
+            locked: false
+          };
+        }
+        
+        groups[key].students++;
+        if (grade.locked) {
+          groups[key].submitted++;
+        } else {
+          groups[key].pending++;
+        }
+        groups[key].locked = groups[key].pending === 0 && groups[key].submitted > 0;
+        
+        return groups;
+      }, {});
+      
+      const gradesResult = Object.values(courseGroups);
       setGradesData(gradesResult);
       
     } catch (error) {
