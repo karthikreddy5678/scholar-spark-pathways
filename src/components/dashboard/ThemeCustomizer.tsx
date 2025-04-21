@@ -48,15 +48,15 @@ export function ThemeCustomizer() {
   }, [user]);
 
   const applyTheme = (themeId: string) => {
-    // Apply theme changes to the document
+    // Remove all theme classes first
     document.documentElement.classList.remove('theme-default', 'theme-ocean', 'theme-forest', 'theme-sunset');
-    document.documentElement.classList.add(`theme-${themeId}`);
     
-    // You could also change CSS variables here
-    const theme = themes.find(t => t.id === themeId);
-    if (theme) {
-      console.log(`Applied theme: ${theme.name}`);
+    // Add the new theme class
+    if (themeId !== 'default') {
+      document.documentElement.classList.add(`theme-${themeId}`);
     }
+    
+    console.log(`Applied theme: ${themeId}`);
   };
 
   const updateTheme = async (theme: string) => {

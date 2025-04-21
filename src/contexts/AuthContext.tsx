@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setIsAdmin(false);
           setIsLoading(false);
-          navigate('/login', { replace: true });
+          window.location.href = '/login';
           return;
         }
         
@@ -128,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: "You have been successfully signed out"
       });
       
-      // Force navigation to login page
+      // Force navigation to login page using window.location
       window.location.href = '/login';
     } catch (error) {
       console.error("Sign out error:", error);

@@ -234,7 +234,7 @@ export default function Admin() {
         const { data: gradeData, error: gradeError } = await supabase
           .from('grades')
           .select('*')
-          .eq('course_id', course.id)
+          .eq('course_id', course.id.toString())
           .eq('locked', true);
         
         if (gradeError) throw gradeError;
